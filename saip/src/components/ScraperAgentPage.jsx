@@ -4,7 +4,7 @@ import SummaryDisplay from './SummaryDisplay';
 import ErrorMessage from './ErrorMessage';
 
 // URL de tu API backend con proxy
-const API_URL = '/api/query/scrap';
+const API_URL = '/api/scrapagent/scrap';
 
 const UpdatedScraperAgentPage = () => {
   // Estado para el resumen

@@ -5,7 +5,7 @@ import SearchBar from './SearchBar';
 import ErrorMessage from './ErrorMessage';
 
 // URL de tu API backend con proxy
-const API_URL = '/api/query/agent'; // Usa el proxy configurado en vite.config.js
+const API_URL = '/api/newsagent/agent'; // Usa el proxy configurado en vite.config.js
 
 const NewsAgentPage = () => {
   // Estado para el texto de búsqueda
@@ -55,7 +55,7 @@ const NewsAgentPage = () => {
         model: model,
         articles: articles
       };
-      
+      console.log(payload)
       // Hacemos la petición POST al backend
       const response = await fetch(API_URL, {
         method: 'POST',
