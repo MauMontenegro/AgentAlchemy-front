@@ -4,8 +4,7 @@ import NoticiasDisplay from './NoticiasDisplay';
 import SearchBar from './SearchBar';
 import ErrorMessage from './ErrorMessage';
 
-// URL de tu API backend con proxy
-// const API_URL = '/api/newsagent/agent'; // Usa el proxy configurado en vite.config.js para development
+// URL de tu API backend
 const API_URL = `${import.meta.env.VITE_BACKEND_URL}/newsagent/agent`;
 
 const NewsAgentPage = () => {
@@ -56,7 +55,10 @@ const NewsAgentPage = () => {
         model: model,
         articles: articles
       };
-      console.log
+      
+      console.log('Enviando petición a:', API_URL);
+      console.log('Payload:', payload);
+      
       // Hacemos la petición POST al backend
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -67,7 +69,10 @@ const NewsAgentPage = () => {
       });
       
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.detail || `Error: ${response.status} ${response.statusText}`
+        );
       }
       
       // Parseamos la respuesta
@@ -76,7 +81,7 @@ const NewsAgentPage = () => {
       
     } catch (error) {
       console.error('Error al buscar noticias:', error);
-      // Podrías mostrar un mensaje de error al usuario
+      setErrorMessage(error.message || 'Ocurrió un error al buscar noticias. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -90,31 +95,29 @@ const NewsAgentPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-white">
-      {/* Panel lateral izquierdo */}
+    <div className="flex h-full bg-white">
+      {/* Panel lateral para consultas (sin header del agente) */}
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Encabezado del agente */}
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center">
-            <div className="h-6 w-6 text-blue-600 mr-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z" />
-              </svg>
-            </div>
-            <h1 className="text-lg font-semibold">News Agent</h1>
-          </div>
+        {/* Lista de consultas usando el componente ConsultasList */}
+        <div className="p-4 flex-1">
+          <h2 className="text-sm font-medium text-gray-500 mb-2">Consultas Recientes</h2>
+          <ConsultasList 
+            consultas={consultas} 
+            onConsultaClick={handleConsultaClick} 
+          />
         </div>
 
-        {/* Lista de consultas usando el componente ConsultasList */}
-        <ConsultasList 
-          consultas={consultas} 
-          onConsultaClick={handleConsultaClick} 
-        />
-
-        {/* Botón de Nuevo Agente */}
-        <div className="mt-auto p-4">
-          <button className="w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm flex items-center justify-center">
-            <span className="mr-1">+</span> Nuevo Agente
+        {/* Botón de Nueva Consulta */}
+        <div className="p-4 border-t border-gray-200">
+          <button 
+            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm flex items-center justify-center"
+            onClick={() => {
+              setSearchQuery('');
+              setAgentResponse(null);
+              setErrorMessage('');
+            }}
+          >
+            <span className="mr-1">+</span> Nueva Consulta
           </button>
         </div>
       </div>
