@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ArticleCard from './ArticleCard';
 
 const NoticiasDisplay = ({ agentResponse, loading }) => {
+  const [showReport, setShowReport] = useState(false);
+
   return (
     <div className="border border-gray-300 rounded-md h-96">
       <div className="h-full overflow-y-auto p-4">
@@ -15,20 +17,93 @@ const NoticiasDisplay = ({ agentResponse, loading }) => {
             <p>Buscando noticias...</p>
           </div>
         ) : agentResponse ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Encabezado de la respuesta */}
             <div className="font-medium text-lg border-b pb-2 border-gray-200">
               {agentResponse.header}
             </div>
             
+            {/* Estado del Arte (Report) */}
+            {agentResponse.report && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <button
+                  onClick={() => setShowReport(!showReport)}
+                  className="flex items-center justify-between w-full text-left text-sm font-medium text-blue-900 hover:text-blue-800 transition-colors duration-200"
+                >
+                  <div className="flex items-center">
+                    <span className="mr-2">📊</span>
+                    <span>Estado del Arte Actual</span>
+                    <span className="ml-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      Análisis Consolidado
+                    </span>
+                  </div>
+                  <span className={`transform transition-transform duration-200 text-blue-600 ${showReport ? 'rotate-180' : ''}`}>
+                    ▼
+                  </span>
+                </button>
+                
+                {showReport && (
+                  <div className="mt-4 pt-4 border-t border-blue-200">
+                    <div className="bg-white p-4 rounded-md border border-blue-100">
+                      <div className="text-sm text-gray-800 leading-relaxed">
+                        <div className="prose prose-sm max-w-none">
+                          {/* Formatear el report con saltos de línea */}
+                          {agentResponse.report.split('\n').map((paragraph, index) => (
+                            paragraph.trim() ? (
+                              <p key={index} className="mb-3 last:mb-0">
+                                {paragraph.trim()}
+                              </p>
+                            ) : (
+                              <br key={index} />
+                            )
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Metadata del análisis */}
+                    <div className="mt-3 flex items-center justify-between text-xs text-blue-600">
+                      <span className="flex items-center">
+                        <span className="mr-1">🔍</span>
+                        Basado en {agentResponse.summaries?.length || 0} artículo(s) analizado(s)
+                      </span>
+                      <span className="flex items-center">
+                        <span className="mr-1">⏱️</span>
+                        {new Date().toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Separador visual */}
+            {agentResponse.report && (
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="font-medium text-gray-900 flex items-center mb-4">
+                  <span className="mr-2">📰</span>
+                  <span>Artículos Analizados</span>
+                  <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    {agentResponse.summaries?.length || 0}
+                  </span>
+                </h3>
+              </div>
+            )}
+            
             {/* Lista de artículos */}
-            {agentResponse.summaries.map((article, index) => (
-              <ArticleCard key={index} article={article} />
-            ))}
+            <div className="space-y-4">
+              {agentResponse.summaries.map((article, index) => (
+                <ArticleCard key={index} article={article} />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="h-full flex items-center justify-center text-gray-400">
-            <p>Escribe tu consulta para ver noticias relevantes</p>
+            <div className="text-center">
+              <div className="text-4xl mb-2">🔍</div>
+              <p>Escribe tu consulta para ver noticias relevantes</p>
+              <p className="text-xs mt-1">Se generará un estado del arte con el análisis</p>
+            </div>
           </div>
         )}
       </div>
