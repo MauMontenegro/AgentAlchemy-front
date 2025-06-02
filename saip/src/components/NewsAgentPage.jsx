@@ -13,8 +13,11 @@ const NewsAgentPage = () => {
   
   // Estado para parámetros adicionales
   const [articles, setArticles] = useState(2);
-  const [model, setModel] = useState('gpt-4');
-  const [agentType, setAgentType] = useState('news');
+  
+  // Estados para los nuevos campos opcionales
+  const [selectedLanguages, setSelectedLanguages] = useState([]);
+  const [selectedCountries, setSelectedCountries] = useState([]);
+  const [sources, setSources] = useState([]);
   
   // Estado para la respuesta del agente
   const [agentResponse, setAgentResponse] = useState(null);
@@ -48,13 +51,24 @@ const NewsAgentPage = () => {
     setErrorMessage('');
     
     try {
-      // Preparamos el payload según tu modelo Pydantic
+      // Preparamos el payload según tu modelo Pydantic actualizado
       const payload = {
         query: searchQuery,
-        agent_type: agentType,
-        model: model,
         articles: articles
       };
+      
+      // Agregar campos opcionales solo si tienen valores
+      if (sources.length > 0) {
+        payload.source = sources;
+      }
+      
+      if (selectedLanguages.length > 0) {
+        payload.language = selectedLanguages;
+      }
+      
+      if (selectedCountries.length > 0) {
+        payload.country = selectedCountries;
+      }
       
       console.log('Enviando petición a:', API_URL);
       console.log('Payload:', payload);
@@ -90,6 +104,10 @@ const NewsAgentPage = () => {
   // Maneja clic en una consulta previa
   const handleConsultaClick = (consulta) => {
     setSearchQuery(consulta.query);
+    // Reset otros filtros cuando se selecciona una consulta del historial
+    setSelectedLanguages([]);
+    setSelectedCountries([]);
+    setSources([]);
     // Llamamos a handleSearchSubmit manualmente pasando un evento simulado
     handleSearchSubmit({ preventDefault: () => {} });
   };
@@ -115,6 +133,9 @@ const NewsAgentPage = () => {
               setSearchQuery('');
               setAgentResponse(null);
               setErrorMessage('');
+              setSelectedLanguages([]);
+              setSelectedCountries([]);
+              setSources([]);
             }}
           >
             <span className="mr-1">+</span> Nueva Consulta
@@ -131,8 +152,12 @@ const NewsAgentPage = () => {
           onSubmit={handleSearchSubmit}
           articles={articles}
           setArticles={setArticles}
-          model={model}
-          setModel={setModel}
+          selectedLanguages={selectedLanguages}
+          setSelectedLanguages={setSelectedLanguages}
+          selectedCountries={selectedCountries}
+          setSelectedCountries={setSelectedCountries}
+          sources={sources}
+          setSources={setSources}
         />
 
         {/* Mensaje de error */}
