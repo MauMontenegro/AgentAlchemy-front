@@ -14,6 +14,9 @@ const NewsAgentPage = () => {
   // Estado para parámetros adicionales
   const [articles, setArticles] = useState(2);
   
+  // Estado para el modo del agente
+  const [mode, setMode] = useState('advanced'); // 'simple' or 'advanced'
+  
   // Estados para los nuevos campos opcionales
   const [selectedLanguages, setSelectedLanguages] = useState([]);
   const [selectedCountries, setSelectedCountries] = useState([]);
@@ -54,7 +57,8 @@ const NewsAgentPage = () => {
       // Preparamos el payload según tu modelo Pydantic actualizado
       const payload = {
         query: searchQuery,
-        articles: articles
+        articles: articles,
+        mode: mode // Agregamos el campo mode
       };
       
       // Agregar campos opcionales solo si tienen valores
@@ -158,6 +162,8 @@ const NewsAgentPage = () => {
           setSelectedCountries={setSelectedCountries}
           sources={sources}
           setSources={setSources}
+          mode={mode}
+          setMode={setMode}
         />
 
         {/* Mensaje de error */}
@@ -170,7 +176,8 @@ const NewsAgentPage = () => {
           {/* Componente para mostrar las noticias */}
           <NoticiasDisplay 
             agentResponse={agentResponse} 
-            loading={loading} 
+            loading={loading}
+            mode={mode}
           />
         </div>
       </div>

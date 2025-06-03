@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ArticleCard from './ArticleCard';
 
-const NoticiasDisplay = ({ agentResponse, loading }) => {
+const NoticiasDisplay = ({ agentResponse, loading, mode }) => {
   const [showReport, setShowReport] = useState(false);
 
   return (
@@ -23,8 +23,8 @@ const NoticiasDisplay = ({ agentResponse, loading }) => {
               {agentResponse.header}
             </div>
             
-            {/* Estado del Arte (Report) */}
-            {agentResponse.report && (
+            {/* Estado del Arte (Report) - Solo mostrar en modo avanzado */}
+            {mode === 'advanced' && agentResponse.report && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <button
                   onClick={() => setShowReport(!showReport)}
@@ -77,8 +77,8 @@ const NoticiasDisplay = ({ agentResponse, loading }) => {
               </div>
             )}
             
-            {/* Separador visual */}
-            {agentResponse.report && (
+            {/* Separador visual - Solo mostrar si hay report en modo avanzado */}
+            {mode === 'advanced' && agentResponse.report && (
               <div className="border-t border-gray-200 pt-4">
                 <h3 className="font-medium text-gray-900 flex items-center mb-4">
                   <span className="mr-2">📰</span>
@@ -87,6 +87,19 @@ const NoticiasDisplay = ({ agentResponse, loading }) => {
                     {agentResponse.summaries?.length || 0}
                   </span>
                 </h3>
+              </div>
+            )}
+            
+            {/* Indicador de modo simple */}
+            {mode === 'simple' && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center text-sm text-amber-800">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="font-medium">Modo Simple</span>
+                  <span className="ml-2 text-amber-600">• Solo resúmenes individuales</span>
+                </div>
               </div>
             )}
             
@@ -102,7 +115,11 @@ const NoticiasDisplay = ({ agentResponse, loading }) => {
             <div className="text-center">
               <div className="text-4xl mb-2">🔍</div>
               <p>Escribe tu consulta para ver noticias relevantes</p>
-              <p className="text-xs mt-1">Se generará un estado del arte con el análisis</p>
+              <p className="text-xs mt-1">
+                {mode === 'advanced' 
+                  ? 'Se generará un estado del arte con el análisis'
+                  : 'Se mostrarán resúmenes individuales de los artículos'}
+              </p>
             </div>
           </div>
         )}
