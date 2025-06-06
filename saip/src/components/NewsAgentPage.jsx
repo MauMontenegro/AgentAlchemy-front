@@ -18,9 +18,8 @@ const NewsAgentPage = () => {
   const [mode, setMode] = useState('advanced'); // 'simple' or 'advanced'
   
   // Estados para los nuevos campos opcionales
-  const [selectedLanguages, setSelectedLanguages] = useState([]);
-  const [selectedCountries, setSelectedCountries] = useState([]);
-  const [sources, setSources] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [displayLanguage, setDisplayLanguage] = useState('español'); // Default to Spanish
   
   // Estado para la respuesta del agente
   const [agentResponse, setAgentResponse] = useState(null);
@@ -43,11 +42,9 @@ const NewsAgentPage = () => {
     setSearchQuery(e.target.value);
   };
 
-  // Maneja el envío del formulario de búsqueda
-  const handleSearchSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (searchQuery.trim() === '') return;
+  // Función para ejecutar la búsqueda
+  const executeSearch = async (query) => {
+    if (!query || query.trim() === '') return;
     
     setLoading(true);
     setAgentResponse(null);
@@ -56,22 +53,15 @@ const NewsAgentPage = () => {
     try {
       // Preparamos el payload según tu modelo Pydantic actualizado
       const payload = {
-        query: searchQuery,
+        query: query,
         articles: articles,
-        mode: mode // Agregamos el campo mode
+        mode: mode,
+        language: [displayLanguage] // Always send display language
       };
       
-      // Agregar campos opcionales solo si tienen valores
-      if (sources.length > 0) {
-        payload.source = sources;
-      }
-      
-      if (selectedLanguages.length > 0) {
-        payload.language = selectedLanguages;
-      }
-      
-      if (selectedCountries.length > 0) {
-        payload.country = selectedCountries;
+      // Agregar país si está seleccionado
+      if (selectedCountry) {
+        payload.country = [selectedCountry]; // Backend expects array
       }
       
       console.log('Enviando petición a:', API_URL);
@@ -105,15 +95,19 @@ const NewsAgentPage = () => {
     }
   };
 
+  // Maneja el envío del formulario de búsqueda
+  const handleSearchSubmit = async (e) => {
+    e.preventDefault();
+    await executeSearch(searchQuery);
+  };
+
   // Maneja clic en una consulta previa
-  const handleConsultaClick = (consulta) => {
+  const handleConsultaClick = async (consulta) => {
     setSearchQuery(consulta.query);
-    // Reset otros filtros cuando se selecciona una consulta del historial
-    setSelectedLanguages([]);
-    setSelectedCountries([]);
-    setSources([]);
-    // Llamamos a handleSearchSubmit manualmente pasando un evento simulado
-    handleSearchSubmit({ preventDefault: () => {} });
+    // Reset country filter when selecting from history
+    setSelectedCountry('');
+    // Note: Not resetting displayLanguage as it's a user preference
+    await executeSearch(consulta.query);
   };
 
   return (
@@ -137,9 +131,8 @@ const NewsAgentPage = () => {
               setSearchQuery('');
               setAgentResponse(null);
               setErrorMessage('');
-              setSelectedLanguages([]);
-              setSelectedCountries([]);
-              setSources([]);
+              setSelectedCountry('');
+              // Note: Not resetting displayLanguage as it's a user preference
             }}
           >
             <span className="mr-1">+</span> Nueva Consulta
@@ -156,12 +149,10 @@ const NewsAgentPage = () => {
           onSubmit={handleSearchSubmit}
           articles={articles}
           setArticles={setArticles}
-          selectedLanguages={selectedLanguages}
-          setSelectedLanguages={setSelectedLanguages}
-          selectedCountries={selectedCountries}
-          setSelectedCountries={setSelectedCountries}
-          sources={sources}
-          setSources={setSources}
+          selectedCountry={selectedCountry}
+          setSelectedCountry={setSelectedCountry}
+          displayLanguage={displayLanguage}
+          setDisplayLanguage={setDisplayLanguage}
           mode={mode}
           setMode={setMode}
         />

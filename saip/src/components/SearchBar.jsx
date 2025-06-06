@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const SearchBar = ({ 
   value, 
@@ -7,79 +6,79 @@ const SearchBar = ({
   onSubmit, 
   articles, 
   setArticles, 
-  selectedLanguages,
-  setSelectedLanguages,
-  selectedCountries,
-  setSelectedCountries,
-  sources,
-  setSources,
+  selectedCountry,
+  setSelectedCountry,
+  displayLanguage,
+  setDisplayLanguage,
   mode,
   setMode 
 }) => {
-  const [currentSource, setCurrentSource] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Opciones disponibles
   const languageOptions = [
-    { code: 'en', label: 'English' },
-    { code: 'es', label: 'Español' }
+    { code: 'español', label: 'Español' },
+    { code: 'inglés', label: 'Inglés' }
   ];
 
   const countryOptions = [
+    { code: 'MX', label: 'México' },
     { code: 'US', label: 'Estados Unidos' },
-    { code: 'MX', label: 'México' }
+    { code: 'CN', label: 'China' },
+    { code: 'CA', label: 'Canadá' },
+    { code: 'RU', label: 'Rusia' },
+    { code: 'GB', label: 'Inglaterra' },
+    { code: 'JP', label: 'Japón' },
+    { code: 'AU', label: 'Australia' },
+    { code: 'ES', label: 'España' },
+    { code: 'BR', label: 'Brasil' }
   ];
 
-  // Manejar agregar fuente
-  const handleAddSource = (e) => {
-    if (e.key === 'Enter' && currentSource.trim()) {
-      e.preventDefault();
-      if (!sources.includes(currentSource.trim())) {
-        setSources([...sources, currentSource.trim()]);
-      }
-      setCurrentSource('');
-    }
+  // Obtener label del país seleccionado
+  const getSelectedCountryLabel = () => {
+    const country = countryOptions.find(c => c.code === selectedCountry);
+    return country ? country.label : 'Todos los países';
   };
 
-  // Manejar eliminar fuente
-  const handleRemoveSource = (sourceToRemove) => {
-    setSources(sources.filter(source => source !== sourceToRemove));
-  };
-
-  // Toggle idioma
-  const toggleLanguage = (langCode) => {
-    if (selectedLanguages.includes(langCode)) {
-      setSelectedLanguages(selectedLanguages.filter(lang => lang !== langCode));
-    } else {
-      setSelectedLanguages([...selectedLanguages, langCode]);
-    }
-  };
-
-  // Toggle país
-  const toggleCountry = (countryCode) => {
-    if (selectedCountries.includes(countryCode)) {
-      setSelectedCountries(selectedCountries.filter(country => country !== countryCode));
-    } else {
-      setSelectedCountries([...selectedCountries, countryCode]);
-    }
+  // Obtener label del idioma seleccionado
+  const getSelectedLanguageLabel = () => {
+    const language = languageOptions.find(l => l.code === displayLanguage);
+    return language ? language.label : '';
   };
 
   return (
-    <div className="mb-6">
-      <form onSubmit={onSubmit} className="space-y-3">
+    <div className="mb-3">
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(e);
+      }} className="space-y-2">
         {/* Campo principal de búsqueda */}
-        <div>
+        <div className="flex gap-2">
           <input
             type="text"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             placeholder="¿Sobre qué temas quieres informarte hoy?"
             value={value}
             onChange={onChange}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onSubmit(e);
+              }
+            }}
           />
+          <button
+            type="submit"
+            className="px-3 py-2 border border-gray-300 bg-white text-gray-600 rounded-md hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all duration-200 flex items-center justify-center"
+            title="Buscar"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
         
         {/* Controles principales en una línea */}
-        <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
           {/* Toggle de Modo */}
           <div className="flex items-center space-x-3">
             <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Modo:</span>
@@ -120,7 +119,7 @@ const SearchBar = ({
           </div>
 
           {/* Separador vertical */}
-          <div className="h-8 w-px bg-gray-300"></div>
+          <div className="h-6 w-px bg-gray-300"></div>
 
           {/* Selector de número de artículos */}
           <div className="flex items-center space-x-2">
@@ -139,7 +138,7 @@ const SearchBar = ({
           </div>
 
           {/* Separador vertical */}
-          <div className="h-8 w-px bg-gray-300"></div>
+          <div className="h-6 w-px bg-gray-300"></div>
 
           {/* Botón de filtros avanzados */}
           <button
@@ -168,95 +167,52 @@ const SearchBar = ({
 
         {/* Filtros avanzados */}
         {showAdvancedFilters && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
-            {/* Idiomas y Países en la misma línea */}
-            <div className="grid grid-cols-2 gap-6">
-              {/* Idiomas */}
-              <div className="border-r border-gray-300 pr-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Idioma de las noticias
-                </label>
-                <div className="space-y-2">
-                  {languageOptions.map(lang => (
-                    <label key={lang.code} className="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={selectedLanguages.includes(lang.code)}
-                        onChange={() => toggleLanguage(lang.code)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{lang.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Países */}
-              <div className="pl-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+            {/* País e Idioma en la misma línea */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* País */}
+              <div className="border-r border-gray-300 pr-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   País de origen
                 </label>
-                <div className="space-y-2">
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  <option value="">Todos los países</option>
                   {countryOptions.map(country => (
-                    <label key={country.code} className="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={selectedCountries.includes(country.code)}
-                        onChange={() => toggleCountry(country.code)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{country.label}</span>
-                    </label>
+                    <option key={country.code} value={country.code}>
+                      {country.label}
+                    </option>
                   ))}
-                </div>
+                </select>
+              </div>
+
+              {/* Idioma de visualización */}
+              <div className="pl-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Idioma de visualización
+                </label>
+                <select
+                  value={displayLanguage}
+                  onChange={(e) => setDisplayLanguage(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                >
+                  {languageOptions.map(language => (
+                    <option key={language.code} value={language.code}>
+                      {language.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Fuentes específicas */}
-            <div className="border-t border-gray-200 pt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fuentes específicas (opcional)
-              </label>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={currentSource}
-                  onChange={(e) => setCurrentSource(e.target.value)}
-                  onKeyDown={handleAddSource}
-                  placeholder="Ej: bbc.com, reuters.com (presiona Enter para agregar)"
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm"
-                />
-                {sources.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {sources.map((source, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {source}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSource(source)}
-                          className="ml-2 inline-flex items-center justify-center w-4 h-4 text-blue-400 hover:text-blue-600"
-                        >
-                          <XMarkIcon className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Información de configuración actual */}
+            <div className="text-xs text-gray-600 italic pt-2">
+              Visualización: {getSelectedLanguageLabel()}
+              {selectedCountry && ` • Filtro: País: ${getSelectedCountryLabel()}`}
             </div>
-
-            {/* Indicador de filtros activos */}
-            {(selectedLanguages.length > 0 || selectedCountries.length > 0 || sources.length > 0) && (
-              <div className="text-xs text-gray-600 italic">
-                Filtros activos: 
-                {selectedLanguages.length > 0 && ` ${selectedLanguages.length} idioma(s)`}
-                {selectedCountries.length > 0 && ` ${selectedCountries.length} país(es)`}
-                {sources.length > 0 && ` ${sources.length} fuente(s)`}
-              </div>
-            )}
           </div>
         )}
       </form>
