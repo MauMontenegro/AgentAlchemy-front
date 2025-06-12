@@ -1,6 +1,137 @@
 import React from 'react';
+import jsPDF from 'jspdf';
 
 const SummaryDisplay = ({ summary, loading, url, urls }) => {
+  // Function to generate text-based PDF with formatted text from markdown
+  const downloadPDF = () => {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    const maxWidth = pageWidth - (2 * margin);
+    let yPosition = margin;
+
+    // Helper function to add text with automatic page breaks
+    const addText = (text, fontSize = 12, isBold = false, color = [0, 0, 0]) => {
+      pdf.setFontSize(fontSize);
+      pdf.setFont("helvetica", isBold ? "bold" : "normal");
+      pdf.setTextColor(...color);
+      
+      const lines = pdf.splitTextToSize(text, maxWidth);
+      
+      for (const line of lines) {
+        if (yPosition + fontSize/2 > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        pdf.text(line, margin, yPosition);
+        yPosition += fontSize * 0.4;
+      }
+      
+      return yPosition;
+    };
+
+    // Helper function to add spacing
+    const addSpace = (space = 5) => {
+      yPosition += space;
+      if (yPosition > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+    };
+
+    // Helper function to process markdown text
+    const processMarkdownText = (text) => {
+      const lines = text.split('\n');
+      
+      lines.forEach(line => {
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine === '') {
+          addSpace(3);
+        } else if (trimmedLine.startsWith('####')) {
+          // H4 headers
+          addSpace(2);
+          addText(trimmedLine.substring(4).trim(), 11, true, [75, 85, 99]);
+          addSpace(3);
+        } else if (trimmedLine.startsWith('###')) {
+          // H3 headers
+          addSpace(3);
+          addText(trimmedLine.substring(3).trim(), 13, true, [55, 65, 81]);
+          addSpace(4);
+        } else if (trimmedLine.startsWith('##')) {
+          // H2 headers
+          addSpace(4);
+          addText(trimmedLine.substring(2).trim(), 15, true, [31, 41, 55]);
+          addSpace(5);
+        } else if (trimmedLine.startsWith('#')) {
+          // H1 headers
+          addSpace(5);
+          addText(trimmedLine.substring(1).trim(), 18, true, [30, 64, 175]);
+          addSpace(6);
+        } else if (trimmedLine.startsWith('*') || trimmedLine.startsWith('-')) {
+          // Bullet points
+          const bulletText = '• ' + trimmedLine.substring(1).trim();
+          addText(bulletText, 11, false, [55, 65, 81]);
+          addSpace(2);
+        } else if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
+          // Bold text
+          const boldText = trimmedLine.substring(2, trimmedLine.length - 2);
+          addText(boldText, 11, true, [55, 65, 81]);
+          addSpace(3);
+        } else {
+          // Regular text
+          addText(trimmedLine, 11, false, [55, 65, 81]);
+          addSpace(3);
+        }
+      });
+    };
+
+    // Header
+    addText('SAIP - Resumen de Contenido', 24, true, [30, 64, 175]);
+    addSpace(5);
+    addText(`Generado el: ${new Date().toLocaleString('es-ES')}`, 10, false, [107, 114, 128]);
+    addSpace(10);
+
+    // Source URLs
+    if (url) {
+      addText('Fuente:', 12, true, [55, 65, 81]);
+      addSpace(2);
+      addText(url, 10, false, [59, 130, 246]);
+      addSpace(10);
+    }
+
+    if (urls && urls.length > 1) {
+      addText('Fuentes comparadas:', 12, true, [55, 65, 81]);
+      addSpace(3);
+      urls.forEach((url, index) => {
+        addText(`${index + 1}. ${url}`, 10, false, [59, 130, 246]);
+        addSpace(2);
+      });
+      addSpace(8);
+    }
+
+    // Summary content - process markdown and format properly
+    addText('RESUMEN', 16, true, [31, 41, 55]);
+    addSpace(8);
+
+    // Process the summary text as markdown
+    if (summary) {
+      processMarkdownText(summary);
+    }
+
+    // Footer
+    addSpace(10);
+    pdf.setDrawColor(229, 231, 235);
+    pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+    addSpace(5);
+    addText('Sistema de Automatización Inteligente Petroil - SAIP v2.1.0', 8, false, [156, 163, 175]);
+
+    // Save the PDF
+    const filename = `SAIP_Resumen_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(filename);
+  };
+
   // Función para formatear texto con estilo de markdown simple
   const formatMarkdown = (text) => {
     if (!text) return '';
@@ -47,6 +178,19 @@ const SummaryDisplay = ({ summary, loading, url, urls }) => {
           </div>
         ) : summary ? (
           <div className="text-sm">
+            {/* Botón de descarga PDF */}
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={downloadPDF}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Descargar PDF
+              </button>
+            </div>
+            
             {/* Mostrar la(s) URL(s) usada(s) */}
             {url && (
               <div className="mb-4">

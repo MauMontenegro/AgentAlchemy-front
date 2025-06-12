@@ -128,15 +128,39 @@ const ScraperAgentPage = () => {
 
         {/* Botón de Nueva Consulta */}
         <div className="p-4 border-t border-gray-200">
-          <button 
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm flex items-center justify-center"
+          <button
+            className="
+              w-full 
+              bg-blue-600 
+              hover:bg-blue-700 
+              active:bg-blue-800
+              text-white 
+              px-4 py-2.5 
+              rounded-lg 
+              text-sm font-medium
+              flex items-center justify-center
+              shadow-sm hover:shadow-md
+              transform transition-all duration-200 ease-in-out
+              hover:-translate-y-0.5
+              active:translate-y-0
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+              group
+            "
             onClick={() => {
               setSummary('');
               setProcessedUrls([]);
               setErrorMessage('');
             }}
           >
-            <span className="mr-1">+</span> Nueva Consulta
+            <span className="
+              mr-2 
+              text-lg
+              transition-transform duration-200 
+              group-hover:rotate-90
+            ">
+              +
+            </span>
+            <span>Nueva Consulta</span>
           </button>
         </div>
       </div>

@@ -11,13 +11,16 @@ const SearchBar = ({
   displayLanguage,
   setDisplayLanguage,
   mode,
-  setMode 
+  setMode,
+  selectedSources = [], // Default to empty array
+  setSelectedSources
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [sourceInput, setSourceInput] = useState('');
 
   const languageOptions = [
-    { code: 'español', label: 'Español' },
-    { code: 'inglés', label: 'Inglés' }
+    { code: 'spanish', label: 'Español' },
+    { code: 'english', label: 'Inglés' }
   ];
 
   const countryOptions = [
@@ -45,26 +48,56 @@ const SearchBar = ({
     return language ? language.label : '';
   };
 
+  // Manejar la adición de fuentes
+  const handleAddSource = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const trimmedSource = sourceInput.trim();
+    
+    if (trimmedSource && !selectedSources.includes(trimmedSource)) {
+      setSelectedSources([...selectedSources, trimmedSource]);
+      setSourceInput('');
+    }
+  };
+
+  // Eliminar una fuente
+  const handleRemoveSource = (sourceToRemove) => {
+    setSelectedSources(selectedSources.filter(source => source !== sourceToRemove));
+  };
+
+  // Manejar el key press en el input de fuentes
+  const handleSourceKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleAddSource();
+    } else if (e.key === 'Backspace' && sourceInput === '' && selectedSources.length > 0) {
+      // Si presiona backspace con input vacío, elimina la última fuente
+      e.preventDefault();
+      const newSources = [...selectedSources];
+      newSources.pop();
+      setSelectedSources(newSources);
+    }
+  };
+
   return (
     <div className="mb-3">
       <form onSubmit={(e) => {
         e.preventDefault();
         onSubmit(e);
-      }} className="space-y-2">
+      }} 
+      className="space-y-2">
         {/* Campo principal de búsqueda */}
         <div className="flex gap-2">
           <input
+            id="main-search"
             type="text"
             className="flex-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             placeholder="¿Sobre qué temas quieres informarte hoy?"
             value={value}
             onChange={onChange}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onSubmit(e);
-              }
-            }}
           />
           <button
             type="submit"
@@ -167,7 +200,7 @@ const SearchBar = ({
 
         {/* Filtros avanzados */}
         {showAdvancedFilters && (
-          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
             {/* País e Idioma en la misma línea */}
             <div className="grid grid-cols-2 gap-4">
               {/* País */}
@@ -208,10 +241,80 @@ const SearchBar = ({
               </div>
             </div>
 
+            {/* Campo de fuentes de noticias */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fuentes de noticias
+              </label>
+              <div className="space-y-2">
+                {/* Input para agregar fuentes */}
+                <div className="relative">
+                  <input
+                    id="source-input"
+                    type="text"
+                    value={sourceInput}
+                    onChange={(e) => setSourceInput(e.target.value)}
+                    onKeyDown={handleSourceKeyDown}
+                    placeholder="Escribe una fuente y presiona Enter (ej: CNN, BBC, Reuters...)"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm pr-20"
+                  />
+                  {sourceInput && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAddSource();
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-sm text-blue-600 hover:text-blue-800 font-medium px-2 py-1 hover:bg-blue-50 rounded transition-colors"
+                    >
+                      Agregar
+                    </button>
+                  )}
+                </div>
+
+                {/* Lista de fuentes seleccionadas */}
+                {selectedSources.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-gray-600 mb-1">Fuentes seleccionadas:</p>
+                    <div className="flex flex-wrap gap-2 p-3 bg-white border border-gray-200 rounded-md shadow-sm">
+                      {selectedSources.map((source, index) => (
+                        <span
+                          key={index}
+                          onClick={() => handleRemoveSource(source)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-red-100 hover:text-red-800 cursor-pointer transition-all duration-200 group shadow-sm hover:shadow"
+                          title="Clic para eliminar"
+                        >
+                          <span className="mr-1">📰</span>
+                          {source}
+                          <svg 
+                            className="ml-2 w-4 h-4 opacity-60 group-hover:opacity-100" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje informativo cuando no hay fuentes */}
+                {selectedSources.length === 0 && (
+                  <p className="text-xs text-gray-500 italic">
+                    No hay fuentes seleccionadas. Se buscarán noticias de todas las fuentes disponibles.
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Información de configuración actual */}
             <div className="text-xs text-gray-600 italic pt-2">
               Visualización: {getSelectedLanguageLabel()}
               {selectedCountry && ` • Filtro: País: ${getSelectedCountryLabel()}`}
+              {selectedSources.length > 0 && ` • ${selectedSources.length} fuente(s) seleccionada(s)`}
             </div>
           </div>
         )}

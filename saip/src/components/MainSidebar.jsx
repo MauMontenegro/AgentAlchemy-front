@@ -1,6 +1,7 @@
 // MainSidebar.jsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import { 
   HomeIcon,
   MagnifyingGlassIcon, 
@@ -9,12 +10,16 @@ import {
   ChartBarIcon,
   CogIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ArrowLeftOnRectangleIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 
 const MainSidebar = ({ onToggle }) => {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   
   const isActive = (path) => {
     return location.pathname === path || location.pathname.startsWith(path);
@@ -94,28 +99,79 @@ const MainSidebar = ({ onToggle }) => {
             <ChevronLeftIcon className="h-4 w-4 transform transition-transform duration-300 group-hover:scale-110" />
           )}
         </button>
+        
+        {/* ⭐ CHANGED SECTION - Workspace with user info */}
         {!isCollapsed && (
           <div className="mt-2">
             <p className="text-sm text-gray-500">Workspace</p>
             <div className="flex items-center mt-1">
-              <div className="flex items-center">
-                <HomeIcon className="h-4 w-4 text-gray-600" />
-                <span className="ml-2 text-sm">Petroil</span>
-              </div>
-              {/* Avatar de usuario */}
-              <div className="ml-auto">
-                <div className="h-8 w-8 rounded-full bg-purple-700 flex items-center justify-center text-white text-sm">
-                  M
+              <div className="flex items-center flex-1">
+                {/* ⭐ NEW: User icon with first letter instead of HomeIcon */}
+                <div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
+                {/* ⭐ CHANGED: Shows username instead of "Petroil" */}
+                <span className="ml-2 text-sm font-medium text-gray-800 truncate">
+                  {user?.username || 'Usuario'}
+                </span>
+              </div>
+              {/* Avatar de usuario con menú */}
+              <div className="ml-2 relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="h-8 w-8 rounded-full bg-purple-700 flex items-center justify-center text-white text-sm hover:ring-2 hover:ring-purple-500 transition-all"
+                >
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </button>
+                {showUserMenu && !isCollapsed && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b">
+                      <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        logout();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                    >
+                      <ArrowLeftOnRectangleIcon className="h-4 w-4 mr-2" />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
+        
         {isCollapsed && (
-          <div className="mt-2 flex justify-center">
-            <div className="h-8 w-8 rounded-full bg-purple-700 flex items-center justify-center text-white text-sm">
-              M
-            </div>
+          <div className="mt-2 flex justify-center relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="h-8 w-8 rounded-full bg-purple-700 flex items-center justify-center text-white text-sm hover:ring-2 hover:ring-purple-500 transition-all"
+            >
+              {user?.username?.charAt(0).toUpperCase() || 'U'}
+            </button>
+            {showUserMenu && (
+              <div className="absolute left-full ml-2 mt-0 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                <div className="px-4 py-2 border-b">
+                  <p className="text-sm font-medium text-gray-900">{user?.username}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    logout();
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                >
+                  <ArrowLeftOnRectangleIcon className="h-4 w-4 mr-2" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

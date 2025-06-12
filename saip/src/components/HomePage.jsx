@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from './AuthContext';  // ⭐ NEW IMPORT
 import { 
   MagnifyingGlassIcon, 
   DocumentTextIcon, 
@@ -12,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const HomePage = () => {
+  const { user } = useAuth();  // ⭐ NEW: Get user from auth context
+
   const modules = [
     {
       id: 'research',
@@ -65,10 +68,10 @@ const HomePage = () => {
   return (
     <div className="min-h-full">
       <div className="p-6 max-w-7xl mx-auto">
-        {/* Header */}
+        {/* ⭐ CHANGED SECTION - Personalized Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Bienvenido a SAIP
+            Bienvenido{user?.username ? `, ${user.username}` : ''} a SAIP
           </h1>
           <p className="text-lg text-gray-600">
             Sistema de Automatización Inteligente Petroil
