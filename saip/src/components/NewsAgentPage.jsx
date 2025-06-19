@@ -3,14 +3,14 @@ import ConsultasList from './ConsultasList';
 import NoticiasDisplay from './NoticiasDisplay';
 import SearchBar from './SearchBar';
 import ErrorMessage from './ErrorMessage';
-
-// URL de tu API backend
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/newsagent/agent`;
+import useAuthenticatedFetch from './useAuthenticatedFetch';
 
 // Key para localStorage
 const SEARCH_HISTORY_KEY = 'newsAgent_searchHistory';
 
 const NewsAgentPage = () => {
+  const authenticatedFetch = useAuthenticatedFetch();
+  
   // Estado para el texto de búsqueda
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -138,24 +138,15 @@ const NewsAgentPage = () => {
         payload.source = selectedSources; // Backend expects 'source' not 'sources'
       }
       
-      console.log('Enviando petición a:', API_URL);
       console.log('Payload completo:', JSON.stringify(payload, null, 2));
       
-      // Hacemos la petición POST al backend
-      const response = await fetch(API_URL, {
+      // Hacemos la petición POST al backend con autenticación
+      const response = await authenticatedFetch('/newsagent/agent', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail || `Error: ${response.status} ${response.statusText}`
-        );
-      }
+      // authenticatedFetch ya maneja errores HTTP, solo necesitamos manejar la respuesta
       
       // Parseamos la respuesta
       const data = await response.json();

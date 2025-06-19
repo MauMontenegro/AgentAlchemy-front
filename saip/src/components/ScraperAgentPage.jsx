@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import UrlInput from './UrlInput';
 import SummaryDisplay from './SummaryDisplay';
 import ErrorMessage from './ErrorMessage';
-
-// URL de tu API backend
-const API_URL = `${import.meta.env.VITE_BACKEND_URL}/scrapagent/scrap`;
+import useAuthenticatedFetch from './useAuthenticatedFetch';
 
 const ScraperAgentPage = () => {
+  const authenticatedFetch = useAuthenticatedFetch();
+  
   // Estado para el resumen
   const [summary, setSummary] = useState('');
   
@@ -37,26 +37,15 @@ const ScraperAgentPage = () => {
         urls: urls
       };
       
-      console.log('Enviando petición a:', API_URL);
       console.log('Payload:', payload);
       
-      // Hacemos la petición POST al backend
-      const response = await fetch(API_URL, {
+      // Hacemos la petición POST al backend con autenticación
+      const response = await authenticatedFetch('/scrapagent/scrap', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
       
-      console.log('Código de estado:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.detail || `Error: ${response.status} ${response.statusText}`
-        );
-      }
+      // authenticatedFetch ya maneja errores HTTP, solo necesitamos manejar la respuesta
       
       // Parseamos la respuesta
       const data = await response.json();

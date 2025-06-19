@@ -46,13 +46,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     setError(null);
     try {
-      // You'll need to create this endpoint in your backend
-      const response = await fetch(`${API_URL}/auth/login`, {
+      // Use FormData for OAuth2PasswordRequestForm compatibility
+      const formData = new FormData();
+      formData.append('username', username);
+      formData.append('password', password);
+
+      const response = await fetch(`${API_URL}/auth/token`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
+        body: formData,
       });
 
       if (!response.ok) {
