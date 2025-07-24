@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { 
-  HomeIcon,
   MagnifyingGlassIcon, 
   DocumentTextIcon, 
   BeakerIcon, 
@@ -12,8 +11,10 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ArrowLeftOnRectangleIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
+import cifIcon from '../assets/cif.png';
 
 const MainSidebar = ({ onToggle }) => {
   const location = useLocation();
@@ -28,7 +29,6 @@ const MainSidebar = ({ onToggle }) => {
   const toggleSidebar = () => {
     const newCollapsedState = !isCollapsed;
     setIsCollapsed(newCollapsedState);
-    // Informar al componente padre sobre el cambio
     if (onToggle) {
       onToggle(newCollapsedState);
     }
@@ -39,8 +39,22 @@ const MainSidebar = ({ onToggle }) => {
       id: 'home',
       name: 'Inicio',
       path: '/',
-      icon: HomeIcon,
+      icon: cifIcon,
       exact: true
+    },   
+    {
+      id: 'admin',
+      name: 'Administración',
+      path: '/admin',
+      icon: CogIcon,
+      adminOnly: true
+    },
+     {
+      id: 'chat',
+      name: 'Petroil-GPT',
+      path: '/modules/ocr/chat',
+      icon: ChatBubbleLeftRightIcon,
+      agentCount: 1
     },
     {
       id: 'research',
@@ -54,16 +68,15 @@ const MainSidebar = ({ onToggle }) => {
       name: 'OCR & Documents',
       path: '/modules/ocr',
       icon: DocumentTextIcon,
-      agentCount: 3,
-      disabled: true
+      agentCount: 1
     },
     {
       id: 'rd',
-      name: 'I+D & Innovation',
+      name: 'Módulo Financiero',
       path: '/modules/rd',
       icon: BeakerIcon,
-      agentCount: 4,
-      disabled: true
+      agentCount: 1,
+      disabled: false
     },
     {
       id: 'monitoring',
@@ -75,6 +88,12 @@ const MainSidebar = ({ onToggle }) => {
     }
   ];
 
+  // Filter modules based on user role
+  const filteredModules = modules.filter(module => {
+    if (module.adminOnly && user?.role !== 'admin') return false;
+    return true;
+  });
+
   return (
     <div className={`h-screen bg-white border-r border-gray-200 flex flex-col fixed transition-all duration-300 ease-in-out z-30 ${
       isCollapsed ? 'w-16' : 'w-64'
@@ -82,9 +101,16 @@ const MainSidebar = ({ onToggle }) => {
       {/* Logo y título */}
       <div className="p-4 border-b border-gray-200 relative">
         <Link to="/" className="flex items-center">
-          <span className="text-blue-600 font-bold text-xl">
-            {isCollapsed ? 'S' : 'SAIP'}
-          </span>
+          <img 
+            src="https://grupopetroil.com.mx/wp-content/uploads/thegem-logos/logo_3a06f2ca39ac6fe743ad22119d09384b_3x.webp" 
+            alt="Petroil Logo" 
+            className={`${isCollapsed ? 'h-8 w-8' : 'h-8 w-auto mr-2'} object-contain`}
+          />
+          {!isCollapsed && (
+            <span className="text-blue-600 font-bold text-xl">
+              
+            </span>
+          )}
         </Link>
         
         {/* Botón de colapsar/expandir discreto */}
@@ -100,17 +126,15 @@ const MainSidebar = ({ onToggle }) => {
           )}
         </button>
         
-        {/* ⭐ CHANGED SECTION - Workspace with user info */}
+        {/* Workspace with user info */}
         {!isCollapsed && (
           <div className="mt-2">
             <p className="text-sm text-gray-500">Workspace</p>
             <div className="flex items-center mt-1">
               <div className="flex items-center flex-1">
-                {/* ⭐ NEW: User icon with first letter instead of HomeIcon */}
                 <div className="h-6 w-6 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">
                   {user?.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                {/* ⭐ CHANGED: Shows username instead of "Petroil" */}
                 <span className="ml-2 text-sm font-medium text-gray-800 truncate">
                   {user?.username || 'Usuario'}
                 </span>
@@ -179,7 +203,7 @@ const MainSidebar = ({ onToggle }) => {
       {/* Menú de navegación */}
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-3">
-          {modules.map((module) => {
+          {filteredModules.map((module) => {
             const IconComponent = module.icon;
             const isCurrentlyActive = module.exact 
               ? location.pathname === module.path 
@@ -192,7 +216,11 @@ const MainSidebar = ({ onToggle }) => {
                     className="flex items-center px-3 py-2 text-sm text-gray-400 cursor-not-allowed relative group"
                     title={isCollapsed ? `${module.name} - Próximamente` : undefined}
                   >
-                    <IconComponent className="h-5 w-5 flex-shrink-0" />
+                    {typeof IconComponent === 'string' ? (
+                      <img src={IconComponent} alt={module.name} className="h-5 w-5 flex-shrink-0" />
+                    ) : (
+                      <IconComponent className="h-5 w-5 flex-shrink-0" />
+                    )}
                     {!isCollapsed && (
                       <>
                         <span className="flex-1 ml-3">{module.name}</span>
@@ -222,7 +250,11 @@ const MainSidebar = ({ onToggle }) => {
                     }`}
                     title={isCollapsed ? module.name : undefined}
                   >
-                    <IconComponent className="h-5 w-5 flex-shrink-0" />
+                    {typeof IconComponent === 'string' ? (
+                      <img src={IconComponent} alt={module.name} className="h-5 w-5 flex-shrink-0" />
+                    ) : (
+                      <IconComponent className="h-5 w-5 flex-shrink-0" />
+                    )}
                     {!isCollapsed && (
                       <>
                         <span className="flex-1 ml-3">{module.name}</span>

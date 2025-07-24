@@ -7,6 +7,10 @@ import RegisterPage from './components/RegisterPage';
 import MainLayout from './components/MainLayout';
 import HomePage from './components/HomePage';
 import ResearchModulePage from './components/ResearchModulePage';
+import OCRModulePage from './components/OCRModulePage';
+import ChatAgent from './components/ChatAgent';
+import AdminRoute from './components/AdminRoute';
+import AdminPanel from './components/AdminPanel';
 
 function App() {
   console.log('App component rendered');
@@ -28,17 +32,16 @@ function App() {
             {/* Página principal */}
             <Route index element={<HomePage />} />
             
+            {/* Chat Agent */}
+            <Route path="chat" element={<ChatAgent />} />
+            
             {/* Módulo Research & News */}
             <Route path="modules/research/*" element={<ResearchModulePage />} />
             
-            {/* Otros módulos (placeholder para futuro desarrollo) */}
-            <Route path="modules/ocr" element={
-              <div className="p-6">
-                <h1 className="text-2xl font-bold mb-4">Módulo OCR</h1>
-                <p className="text-gray-600">Este módulo estará disponible próximamente.</p>
-              </div>
-            } />
+            {/* OCR & Documents Module */}
+            <Route path="modules/ocr/*" element={<OCRModulePage />} />
             
+            {/* Otros módulos (placeholder para futuro desarrollo) */}
             <Route path="modules/rd" element={
               <div className="p-6">
                 <h1 className="text-2xl font-bold mb-4">Módulo I+D</h1>
@@ -51,6 +54,13 @@ function App() {
                 <h1 className="text-2xl font-bold mb-4">Módulo Monitoring</h1>
                 <p className="text-gray-600">Este módulo estará disponible próximamente.</p>
               </div>
+            } />
+            
+            {/* Admin Panel - Only accessible to admin users */}
+            <Route path="admin" element={
+              <AdminRoute>
+                <AdminPanel />
+              </AdminRoute>
             } />
           </Route>
           

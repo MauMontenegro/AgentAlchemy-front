@@ -13,14 +13,24 @@ function useAuthenticatedFetch() {
       throw new Error('No authentication token found');
     }
 
+    // Don't override Content-Type if it's a FormData (file upload)
+    const isFormData = options.body && options.body instanceof FormData;
+    
     const config = {
       ...options,
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        ...(!isFormData && { 'Content-Type': 'application/json' }), // Only set for non-FormData
         ...options.headers,
       },
     };
+    
+    // Log request details for debugging
+    console.log('Sending request to:', endpoint, {
+      method: config.method || 'GET',
+      headers: config.headers,
+      body: isFormData ? '[FormData]' : config.body
+    });
 
     try {
       const response = await fetch(`${API_URL}${endpoint}`, config);
