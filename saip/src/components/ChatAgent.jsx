@@ -276,6 +276,8 @@ const ChatAgent = () => {
   // Handler for creating a new context
   const handleCreateContext = useCallback(async (name) => {
     console.log('Creating new context:', name);
+    console.log('Current location:', window.location.pathname);
+    console.log('Auth token exists:', !!localStorage.getItem('token'));
     try {
       // Create the new context
       const response = await authenticatedFetch('/contexts/', {
@@ -285,6 +287,7 @@ const ChatAgent = () => {
           description: `Contexto creado el ${new Date().toLocaleString()}`
         })
       });
+      console.log('Context creation response:', response.status);
       
       console.log('Context created, refreshing list...');
       // Force a refresh of contexts after creation
@@ -372,8 +375,15 @@ const ChatAgent = () => {
   // Handle sending a chat message
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim() || !activeContext) return;
+    if (!inputValue.trim() || !activeContext) {
+      console.log('Message send blocked:', { inputValue: inputValue.trim(), activeContext });
+      return;
+    }
 
+    console.log('Sending message from location:', window.location.pathname);
+    console.log('Active context:', activeContext);
+    console.log('Message content:', inputValue);
+    
     const currentContext = contexts.find(ctx => ctx.id === activeContext);
     const userMessage = {
       id: Date.now(),

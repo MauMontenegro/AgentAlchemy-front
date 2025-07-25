@@ -9,16 +9,17 @@ import {
   ChartBarIcon,
   ClockIcon,
   UserGroupIcon,
-  CogIcon
+  CogIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 const HomePage = () => {
-  const { user } = useAuth();  // ⭐ NEW: Get user from auth context
+  const { user } = useAuth(); 
 
   const modules = [
     {
       id: 'research',
-      title: 'Research & News',
+      title: 'Investigación & Noticias',
       description: 'Análisis de noticias, investigación de mercado y seguimiento de tendencias.',
       icon: MagnifyingGlassIcon,
       color: 'bg-blue-500',
@@ -27,30 +28,30 @@ const HomePage = () => {
     },
     {
       id: 'ocr',
-      title: 'OCR & Document Processing',
+      title: 'OCR & Procesamiento de documentos',
       description: 'Extracción y procesamiento de texto de documentos e imágenes.',
       icon: DocumentTextIcon,
       color: 'bg-green-500',
       link: '/modules/ocr',
-      stats: { agents: 3, documents: 89 }
+      stats: { agents: 1, documents: 20 }
     },
     {
       id: 'rd',
-      title: 'I+D & Innovation',
-      description: 'Investigación y desarrollo, análisis de patentes y seguimiento tecnológico.',
+      title: 'Finanzas',
+      description: 'Análisis y consultas sobre Compras,Ventas,Cobranza y flujo de efectivo.',
       icon: BeakerIcon,
       color: 'bg-purple-500',
       link: '/modules/rd',
-      stats: { projects: 12, patents: 45 }
+      stats: { projects: 0, patents: 0 }
     },
     {
       id: 'monitoring',
-      title: 'Monitoring & Analytics',
-      description: 'Monitoreo de sistemas, análisis de datos y generación de reportes.',
-      icon: ChartBarIcon,
+      title: 'Petroil-GPT',
+      description: 'Conversa con tus documentos en tiempo real.',
+      icon: ChatBubbleLeftRightIcon,
       color: 'bg-orange-500',
-      link: '/modules/monitoring',
-      stats: { dashboards: 8, alerts: 23 }
+      link: '/modules/chat',
+      stats: { contexts: 4 }
     }
   ];
 

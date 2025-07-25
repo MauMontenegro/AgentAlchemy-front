@@ -52,20 +52,20 @@ const MainSidebar = ({ onToggle }) => {
      {
       id: 'chat',
       name: 'Petroil-GPT',
-      path: '/modules/ocr/chat',
+      path: '/modules/chat',
       icon: ChatBubbleLeftRightIcon,
       agentCount: 1
     },
     {
       id: 'research',
-      name: 'Research & News',
+      name: 'Noticias',
       path: '/modules/research',
       icon: MagnifyingGlassIcon,
       agentCount: 2
     },
     {
       id: 'ocr',
-      name: 'OCR & Documents',
+      name: 'OCR',
       path: '/modules/ocr',
       icon: DocumentTextIcon,
       agentCount: 1
@@ -80,10 +80,10 @@ const MainSidebar = ({ onToggle }) => {
     },
     {
       id: 'monitoring',
-      name: 'Monitoring',
+      name: 'Monitoreo',
       path: '/modules/monitoring',
       icon: ChartBarIcon,
-      agentCount: 2,
+      agentCount: 0,
       disabled: true
     }
   ];
