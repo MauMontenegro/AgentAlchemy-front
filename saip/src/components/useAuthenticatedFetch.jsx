@@ -18,6 +18,8 @@ function useAuthenticatedFetch() {
     
     const config = {
       ...options,
+      mode: 'cors',
+      credentials: 'omit',
       headers: {
         'Authorization': `Bearer ${token}`,
         ...(!isFormData && { 'Content-Type': 'application/json' }), // Only set for non-FormData
