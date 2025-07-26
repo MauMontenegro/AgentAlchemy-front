@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import useAuthenticatedFetch from './useAuthenticatedFetch';
 
 const Financiero = () => {
   const { user } = useAuth();
+  const authenticatedFetch = useAuthenticatedFetch();
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -51,11 +53,8 @@ const Financiero = () => {
     setMessages(prev => [...prev, botMessage]);
 
     try {
-      const response = await fetch('http://localhost:8000/finanzas/query', {
+      const response = await authenticatedFetch('/finanzas/query', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           query: inputValue
         }),

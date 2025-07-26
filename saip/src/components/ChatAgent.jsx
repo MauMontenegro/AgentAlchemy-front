@@ -411,11 +411,8 @@ const ChatAgent = () => {
     setMessages(prev => [...prev, botMessage]);
 
     try {
-      const response = await fetch('http://localhost:8000/ragagent/chat', {
+      const response = await authenticatedFetch('/ragagent/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           query: inputValue,
           // You can add context information here if needed
