@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import cifIcon from '../assets/cif.png';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -43,8 +44,15 @@ const LoginPage = () => {
       </div>
       
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Title */}
+        {/* CIF Logo and Title */}
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <img 
+              src={cifIcon} 
+              alt="CIF Logo" 
+              className="h-16 w-auto object-contain"
+            />
+          </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-2">
             Bienvenido a SAIP
           </h1>
