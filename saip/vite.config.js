@@ -15,6 +15,13 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    define: {
+      // Disable react-pdf worker
+      'process.env.REACT_APP_PDF_WORKER_SRC': '""',
+    },
+    optimizeDeps: {
+      exclude: ['pdfjs-dist'],
+    },
     server: {
       proxy: {
         '/api': {

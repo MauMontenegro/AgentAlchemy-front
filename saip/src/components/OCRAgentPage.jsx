@@ -1,14 +1,8 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { Document, Page } from 'react-pdf';
-import { pdfjs } from 'react-pdf';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
 import useAuthenticatedFetch from './useAuthenticatedFetch';
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+import DocumentPreview from './DocumentPreview';
 
 // Initial field template
 const initialField = {
@@ -449,7 +443,7 @@ const OCRAgentPage = () => {
                   {/* Right side - Preview */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Document Preview</h3>
-                    <DocumentPreview selectedFiles={selectedFiles} />
+                    <DocumentPreviewWrapper selectedFiles={selectedFiles} />
                   </div>
                 </div>
                 
@@ -918,44 +912,15 @@ const FileUploadArea = ({ selectedFiles, onFileSelect, onRemoveFile, fileInputRe
   );
 };
 
-// DocumentPreview Component
-const DocumentPreview = ({ selectedFiles }) => {
-  const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
+// Simple DocumentPreview wrapper
+const DocumentPreviewWrapper = ({ selectedFiles }) => {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
-    setPageNumber(1);
-  };
-
   if (selectedFiles.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-        <div className="text-center">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No document selected</h3>
-          <p className="mt-1 text-sm text-gray-500">Upload a file to see a preview here</p>
-        </div>
-      </div>
-    );
+    return <DocumentPreview file={null} />;
   }
 
   const currentFile = selectedFiles[currentFileIndex];
-  const isPdf = currentFile.type === 'application/pdf';
-  const isImage = currentFile.type.startsWith('image/');
 
   return (
     <div className="h-full flex flex-col">
@@ -979,63 +944,8 @@ const DocumentPreview = ({ selectedFiles }) => {
           </select>
         </div>
       )}
-
-      {/* Preview container */}
-      <div className="flex-1 bg-gray-50 rounded-lg border border-gray-200 overflow-auto flex items-center justify-center p-4">
-        {isImage ? (
-          <img
-            src={URL.createObjectURL(currentFile)}
-            alt={currentFile.name}
-            className="max-h-full max-w-full object-contain"
-          />
-        ) : isPdf ? (
-          <div className="w-full">
-            <div className="border border-gray-200 bg-white p-2 mb-2">
-              <Document
-                file={currentFile}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={
-                  <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                  </div>
-                }
-                error={
-                  <div className="text-center p-4 text-red-600">
-                    Failed to load PDF. The file might be corrupted or not a valid PDF.
-                  </div>
-                }
-              >
-                <Page pageNumber={pageNumber} width={400} />
-              </Document>
-            </div>
-            {numPages > 1 && (
-              <div className="flex items-center justify-between text-sm text-gray-700">
-                <button
-                  onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
-                  disabled={pageNumber <= 1}
-                  className="px-3 py-1 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span>
-                  Page {pageNumber} of {numPages}
-                </span>
-                <button
-                  onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-                  disabled={pageNumber >= numPages}
-                  className="px-3 py-1 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center p-4 text-gray-500">
-            Preview not available for this file type
-          </div>
-        )}
-      </div>
+      
+      <DocumentPreview file={currentFile} />
     </div>
   );
 };
