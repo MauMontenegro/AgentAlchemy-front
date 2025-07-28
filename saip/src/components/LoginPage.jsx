@@ -32,33 +32,35 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      {/* Logo at top left */}
+      <div className="absolute top-6 left-6">
+        <img 
+          src="https://grupopetroil.com.mx/wp-content/uploads/thegem-logos/logo_3a06f2ca39ac6fe743ad22119d09384b_3x.webp" 
+          alt="Petroil Logo" 
+          className="h-10 w-auto object-contain"
+        />
+      </div>
+      
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <div className="text-blue-600 font-bold text-4xl">SAIP</div>
-        </div>
-        
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Inicia sesión en tu cuenta
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          ¿No tienes una cuenta?{' '}
-          <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-            Regístrate aquí
-          </Link>
-        </p>
+        {/* Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-2">
+            Bienvenido a SAIP
+          </h1>
+          <p className="text-gray-600 text-sm">Inicia sesión para acceder al sistema</p>
+        </div>       
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-10 px-8 shadow-xl rounded-2xl border border-gray-100 backdrop-blur-sm">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Username field */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
                 Nombre de usuario
               </label>
-              <div className="mt-1">
+              <div className="relative">
                 <input
                   id="username"
                   name="username"
@@ -67,7 +69,7 @@ const LoginPage = () => {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm bg-gray-50 focus:bg-white"
                   placeholder="Ingresa tu nombre de usuario"
                 />
               </div>
@@ -75,10 +77,10 @@ const LoginPage = () => {
 
             {/* Password field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Contraseña
               </label>
-              <div className="mt-1 relative">
+              <div className="relative">
                 <input
                   id="password"
                   name="password"
@@ -87,13 +89,13 @@ const LoginPage = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm pr-10"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm bg-gray-50 focus:bg-white pr-12"
                   placeholder="Ingresa tu contraseña"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center hover:text-blue-600 transition-colors"
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-5 w-5 text-gray-400" />
@@ -104,30 +106,22 @@ const LoginPage = () => {
               </div>
             </div>
 
-            {/* Remember me and forgot password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Recuérdame
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                  ¿Olvidaste tu contraseña?
-                </a>
-              </div>
+            {/* Remember me */}
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+              />
+              <label htmlFor="remember-me" className="ml-3 block text-sm text-gray-700 font-medium">
+                Recuérdame
+              </label>
             </div>
 
             {/* Error message */}
             {errorMessage && (
-              <div className="rounded-md bg-red-50 p-4">
+              <div className="rounded-xl bg-red-50 border border-red-200 p-4 animate-in slide-in-from-top-2 duration-300">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -135,7 +129,7 @@ const LoginPage = () => {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-red-800">{errorMessage}</p>
+                    <p className="text-sm font-medium text-red-800">{errorMessage}</p>
                   </div>
                 </div>
               </div>
@@ -146,7 +140,7 @@ const LoginPage = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 {isLoading ? (
                   <div className="flex items-center">
@@ -163,16 +157,14 @@ const LoginPage = () => {
             </div>
           </form>
 
-          {/* Divider */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Sistema de Automatización Inteligente Petroil</span>
-              </div>
-            </div>
+          {/* Footer */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-500 font-medium">
+              Sistema de Automatización Inteligente Petroil
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              © 2024 Grupo Petroil. Todos los derechos reservados.
+            </p>
           </div>
         </div>
       </div>
