@@ -27,6 +27,11 @@ const OCRAgentPage = () => {
   const [downloadFormat, setDownloadFormat] = useState('json'); // 'json' or 'csv'
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'json'
   const [newField, setNewField] = useState({ ...initialField });
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [schemaName, setSchemaName] = useState('');
+  const [schemaDescription, setSchemaDescription] = useState('');
+  const [savedSchemas, setSavedSchemas] = useState([]);
+  const [showSchemaList, setShowSchemaList] = useState(false);
   const fileInputRef = useRef(null);
 
   // Handle file selection
@@ -364,6 +369,116 @@ const OCRAgentPage = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Load saved schemas
+  const loadSavedSchemas = async () => {
+    try {
+      const response = await authenticatedFetch('/esquemas/');
+      if (response.ok) {
+        const schemas = await response.json();
+        setSavedSchemas(schemas);
+      }
+    } catch (error) {
+      console.error('Error loading schemas:', error);
+      toast.error('Failed to load saved schemas');
+    }
+  };
+
+  // Load schema into current form
+  const loadSchema = (schema) => {
+    try {
+      const schemaData = JSON.parse(schema.schema_data);
+      const loadedFields = Object.entries(schemaData).map(([name, config]) => ({
+        name,
+        type: config[0],
+        required: config[1] === 'required',
+        description: config[2] || ''
+      }));
+      
+      setFields(loadedFields);
+      setShowSchemaList(false);
+      toast.success(`Schema "${schema.name}" loaded successfully!`);
+    } catch (error) {
+      console.error('Error loading schema:', error);
+      toast.error('Failed to load schema');
+    }
+  };
+
+  // Delete schema
+  const deleteSchema = async (schemaId, schemaName) => {
+    if (!confirm(`Are you sure you want to delete the schema "${schemaName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await authenticatedFetch(`/esquemas/${schemaId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete schema');
+      }
+
+      toast.success(`Schema "${schemaName}" deleted successfully!`);
+      loadSavedSchemas(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting schema:', error);
+      toast.error('Failed to delete schema');
+    }
+  };
+
+  // Save schema
+  const saveSchema = async () => {
+    if (!schemaName.trim()) {
+      toast.error('Please enter a schema name');
+      return;
+    }
+    
+    if (fields.length === 0) {
+      toast.error('Please add at least one field to the schema');
+      return;
+    }
+
+    try {
+      const schemaData = {};
+      fields.forEach(field => {
+        if (field.name) {
+          schemaData[field.name] = [
+            field.type,
+            field.required ? 'required' : 'optional',
+            field.description || ''
+          ];
+        }
+      });
+
+      const payload = {
+        name: schemaName,
+        description: schemaDescription,
+        schema_data: JSON.stringify(schemaData)
+      };
+
+      const response = await authenticatedFetch('/esquemas/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save schema');
+      }
+
+      toast.success('Schema saved successfully!');
+      setShowSaveModal(false);
+      setSchemaName('');
+      setSchemaDescription('');
+      loadSavedSchemas(); // Refresh the list
+    } catch (error) {
+      console.error('Error saving schema:', error);
+      toast.error('Failed to save schema');
+    }
+  };
+
   // Reset form
   const resetForm = () => {
     setSelectedFiles([]);
@@ -496,6 +611,32 @@ const OCRAgentPage = () => {
                       </table>
                     </div>
                   )}
+                  
+                  {/* Schema Actions */}
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-sm font-medium text-gray-700">Schema Fields</h4>
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          loadSavedSchemas();
+                          setShowSchemaList(true);
+                        }}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        Load Schema
+                      </button>
+                      {fields.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowSaveModal(true)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          Save Schema
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   
                   {/* Add Field Form */}
                   <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -737,6 +878,122 @@ const OCRAgentPage = () => {
           </div>
         )}
       </div>
+      
+      {/* Save Schema Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Save Schema</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Schema Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={schemaName}
+                    onChange={(e) => setSchemaName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter schema name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={schemaDescription}
+                    onChange={(e) => setSchemaDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                    placeholder="Enter schema description (optional)"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSaveModal(false);
+                    setSchemaName('');
+                    setSchemaDescription('');
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveSchema}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Load Schema Modal */}
+      {showSchemaList && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-2/3 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Load Saved Schema</h3>
+                <button
+                  onClick={() => setShowSchemaList(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              {savedSchemas.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No saved schemas found</p>
+              ) : (
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid gap-3">
+                    {savedSchemas.map((schema) => (
+                      <div key={schema.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">{schema.name}</h4>
+                            {schema.description && (
+                              <p className="text-sm text-gray-600 mt-1">{schema.description}</p>
+                            )}
+                            <p className="text-xs text-gray-500 mt-2">
+                              Created: {new Date(schema.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="ml-4 flex space-x-2">
+                            <button
+                              onClick={() => loadSchema(schema)}
+                              className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                            >
+                              Load
+                            </button>
+                            <button
+                              onClick={() => deleteSchema(schema.id, schema.name)}
+                              className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
