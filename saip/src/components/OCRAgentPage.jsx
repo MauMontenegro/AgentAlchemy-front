@@ -376,6 +376,9 @@ const OCRAgentPage = () => {
       if (response.ok) {
         const schemas = await response.json();
         setSavedSchemas(schemas);
+      } else {
+        console.error('Failed to load schemas, status:', response.status);
+        toast.error('Esquemas endpoint not available');
       }
     } catch (error) {
       console.error('Error loading schemas:', error);
