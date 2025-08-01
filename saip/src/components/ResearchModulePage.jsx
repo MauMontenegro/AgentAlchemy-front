@@ -8,13 +8,13 @@ const ResearchModulePage = () => {
   const agents = [
     {
       id: 'news',
-      name: 'News Agent',
+      name: 'Agente de Noticias',
       path: '/modules/research/news',
       description: 'Búsqueda y análisis de noticias relevantes'
     },
     {
       id: 'scraper',
-      name: 'Scraper Agent',
+      name: 'Agente Scraper',
       path: '/modules/research/scraper',
       description: 'Análisis y resumen de contenido web'
     }
@@ -24,7 +24,7 @@ const ResearchModulePage = () => {
     <div className="flex flex-col h-full">
       {/* Navegación del módulo */}
       <ModuleNavigation 
-        moduleTitle="Research & News" 
+        moduleTitle="Investigación y Noticias" 
         agents={agents}
       />
       

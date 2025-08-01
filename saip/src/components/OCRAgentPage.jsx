@@ -32,6 +32,7 @@ const OCRAgentPage = () => {
   const [schemaDescription, setSchemaDescription] = useState('');
   const [savedSchemas, setSavedSchemas] = useState([]);
   const [showSchemaList, setShowSchemaList] = useState(false);
+  const [currentSchemaId, setCurrentSchemaId] = useState(null);
   const fileInputRef = useRef(null);
 
   // Handle file selection
@@ -115,7 +116,7 @@ const OCRAgentPage = () => {
     console.log('Selected files:', selectedFiles);
     if (filesToProcess.length === 0) {
       console.log('No files selected for processing, showing error');
-      toast.error('Please select at least one file to process');
+      toast.error('Por favor selecciona al menos un archivo para procesar');
       return;
     }
 
@@ -125,7 +126,7 @@ const OCRAgentPage = () => {
     
     if (Object.keys(schemaObj).length === 0) {
       console.log('No fields in schema, showing error');
-      toast.error('Please add at least one field to the schema');
+      toast.error('Por favor agrega al menos un campo al esquema');
       return;
     }
 
@@ -139,7 +140,7 @@ const OCRAgentPage = () => {
       
       // Verify we have files to process
       if (!filesToProcess || filesToProcess.length === 0) {
-        throw new Error('No files selected for processing');
+        throw new Error('No hay archivos seleccionados para procesar');
       }
       
       // Append all selected files to form data with the field name 'files' (plural)
@@ -164,7 +165,7 @@ const OCRAgentPage = () => {
         
       console.log(`Added ${fileEntries.length} files to form data`);
       if (fileEntries.length === 0) {
-        throw new Error('No valid files were added to the form data');
+        throw new Error('No se agregaron archivos válidos al formulario');
       }
       
       // Build the schema object
@@ -182,7 +183,7 @@ const OCRAgentPage = () => {
       
       // Ensure we have at least one field in the schema
       if (Object.keys(formattedSchema).length === 0) {
-        throw new Error('Schema must contain at least one valid field');
+        throw new Error('El esquema debe contener al menos un campo válido');
       }
       
       const schemaString = JSON.stringify(formattedSchema);
@@ -193,7 +194,7 @@ const OCRAgentPage = () => {
         JSON.parse(schemaString);
       } catch (e) {
         console.error('Invalid JSON schema:', e);
-        throw new Error('Failed to create valid JSON schema');
+        throw new Error('Error al crear un esquema JSON válido');
       }
       
       // Add schema to form data
@@ -238,7 +239,7 @@ const OCRAgentPage = () => {
       }
       
       if (!response.body) {
-        throw new Error('No response body');
+        throw new Error('No hay cuerpo de respuesta');
       }
 
       // Process the streaming response
@@ -286,9 +287,9 @@ const OCRAgentPage = () => {
             
             // Show success toast for each processed file
             if (data.file && data.structured) {
-              toast.success(`Processed: ${data.file}`);
+              toast.success(`Procesado: ${data.file}`);
             } else if (data.error) {
-              toast.error(`Error processing ${data.file || 'file'}: ${data.error}`);
+              toast.error(`Error procesando ${data.file || 'archivo'}: ${data.error}`);
             }
           } catch (e) {
             console.error('Error parsing JSON:', e, 'Raw data:', line);
@@ -297,7 +298,7 @@ const OCRAgentPage = () => {
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast.error(`Failed to process document: ${error.message}`);
+      toast.error(`Error al procesar documento: ${error.message}`);
     } finally {
       console.log('Cleaning up, setting loading to false');
       setIsLoading(false);
@@ -342,7 +343,7 @@ const OCRAgentPage = () => {
   // Handle download
   const handleDownload = () => {
     if (!result || result.length === 0) {
-      toast.error('No data to download');
+      toast.error('No hay datos para descargar');
       return;
     }
 
@@ -378,11 +379,11 @@ const OCRAgentPage = () => {
         setSavedSchemas(schemas);
       } else {
         console.error('Failed to load schemas, status:', response.status);
-        toast.error('Esquemas endpoint not available');
+        toast.error('Endpoint de esquemas no disponible');
       }
     } catch (error) {
       console.error('Error loading schemas:', error);
-      toast.error('Failed to load saved schemas');
+      toast.error('Error al cargar esquemas guardados');
     }
   };
 
@@ -398,17 +399,20 @@ const OCRAgentPage = () => {
       }));
       
       setFields(loadedFields);
+      setCurrentSchemaId(schema.id);
+      setSchemaName(schema.name);
+      setSchemaDescription(schema.description || '');
       setShowSchemaList(false);
-      toast.success(`Schema "${schema.name}" loaded successfully!`);
+      toast.success(`Esquema "${schema.name}" cargado exitosamente!`);
     } catch (error) {
       console.error('Error loading schema:', error);
-      toast.error('Failed to load schema');
+      toast.error('Error al cargar esquema');
     }
   };
 
   // Delete schema
   const deleteSchema = async (schemaId, schemaName) => {
-    if (!confirm(`Are you sure you want to delete the schema "${schemaName}"?`)) {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el esquema "${schemaName}"?`)) {
       return;
     }
 
@@ -418,26 +422,26 @@ const OCRAgentPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete schema');
+        throw new Error('Error al eliminar esquema');
       }
 
-      toast.success(`Schema "${schemaName}" deleted successfully!`);
+      toast.success(`Esquema "${schemaName}" eliminado exitosamente!`);
       loadSavedSchemas(); // Refresh the list
     } catch (error) {
       console.error('Error deleting schema:', error);
-      toast.error('Failed to delete schema');
+      toast.error('Error al eliminar esquema');
     }
   };
 
   // Save schema
   const saveSchema = async () => {
     if (!schemaName.trim()) {
-      toast.error('Please enter a schema name');
+      toast.error('Por favor ingresa un nombre para el esquema');
       return;
     }
     
     if (fields.length === 0) {
-      toast.error('Please add at least one field to the schema');
+      toast.error('Por favor agrega al menos un campo al esquema');
       return;
     }
 
@@ -459,26 +463,40 @@ const OCRAgentPage = () => {
         schema_data: JSON.stringify(schemaData)
       };
 
-      const response = await authenticatedFetch('/esquemas/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save schema');
+      let response;
+      if (currentSchemaId) {
+        // Update existing schema
+        response = await authenticatedFetch(`/esquemas/${currentSchemaId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        // Create new schema
+        response = await authenticatedFetch('/esquemas/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
       }
 
-      toast.success('Schema saved successfully!');
+      if (!response.ok) {
+        throw new Error('Error al guardar esquema');
+      }
+
+      toast.success(currentSchemaId ? '¡Esquema actualizado exitosamente!' : '¡Esquema guardado exitosamente!');
       setShowSaveModal(false);
       setSchemaName('');
       setSchemaDescription('');
+      setCurrentSchemaId(null);
       loadSavedSchemas(); // Refresh the list
     } catch (error) {
       console.error('Error saving schema:', error);
-      toast.error('Failed to save schema');
+      toast.error('Error al guardar esquema');
     }
   };
 
@@ -496,18 +514,18 @@ const OCRAgentPage = () => {
   const tabs = [
     {
       id: 'upload',
-      name: 'Upload Document',
-      description: 'Upload documents for OCR processing'
+      name: 'Subir Documento',
+      description: 'Subir documentos para procesamiento OCR'
     },
     {
       id: 'history',
-      name: 'History',
-      description: 'View previously processed documents'
+      name: 'Historial',
+      description: 'Ver documentos procesados anteriormente'
     },
     {
       id: 'settings',
-      name: 'Settings',
-      description: 'Configure OCR processing options'
+      name: 'Configuración',
+      description: 'Configurar opciones de procesamiento OCR'
     }
   ];
 
@@ -538,15 +556,15 @@ const OCRAgentPage = () => {
           <div className="max-w-6xl mx-auto">
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Document Processing</h2>
-                <p className="mt-1 text-sm text-gray-500">Upload documents and define the output schema</p>
+                <h2 className="text-xl font-semibold text-gray-900">Procesamiento de Documentos</h2>
+                <p className="mt-1 text-sm text-gray-500">Sube documentos y define el esquema de salida</p>
               </div>
               
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Left side - File Upload */}
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Upload Documents</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Subir Documentos</h3>
                     <FileUploadArea 
                       selectedFiles={selectedFiles}
                       onFileSelect={handleFileSelect}
@@ -560,14 +578,14 @@ const OCRAgentPage = () => {
                   
                   {/* Right side - Preview */}
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Document Preview</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Vista Previa del Documento</h3>
                     <DocumentPreviewWrapper selectedFiles={selectedFiles} />
                   </div>
                 </div>
                 
                 {/* Output Schema Section */}
                 <div className="mt-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Output Schema</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Esquema de Salida</h3>
                   
                   {/* Fields List - Read Only */}
                   {fields.length > 0 && (
@@ -575,10 +593,10 @@ const OCRAgentPage = () => {
                       <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Field Name</th>
-                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
-                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Required</th>
-                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Description</th>
+                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nombre del Campo</th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Requerido</th>
+                            <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
                             <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
                               <span className="sr-only">Actions</span>
                             </th>
@@ -594,7 +612,7 @@ const OCRAgentPage = () => {
                                 {field.type}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {field.required ? 'Yes' : 'No'}
+                                {field.required ? 'Sí' : 'No'}
                               </td>
                               <td className="px-3 py-4 text-sm text-gray-500">
                                 {field.description || '-'}
@@ -605,7 +623,7 @@ const OCRAgentPage = () => {
                                   onClick={() => removeField(index)}
                                   className="text-red-600 hover:text-red-900"
                                 >
-                                  Remove
+                                  Eliminar
                                 </button>
                               </td>
                             </tr>
@@ -617,7 +635,7 @@ const OCRAgentPage = () => {
                   
                   {/* Schema Actions */}
                   <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-sm font-medium text-gray-700">Schema Fields</h4>
+                    <h4 className="text-sm font-medium text-gray-700">Campos del Esquema</h4>
                     <div className="flex space-x-2">
                       <button
                         type="button"
@@ -627,7 +645,7 @@ const OCRAgentPage = () => {
                         }}
                         className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
-                        Load Schema
+                        Cargar Esquema
                       </button>
                       {fields.length > 0 && (
                         <button
@@ -635,7 +653,7 @@ const OCRAgentPage = () => {
                           onClick={() => setShowSaveModal(true)}
                           className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                         >
-                          Save Schema
+                          {currentSchemaId ? 'Actualizar Esquema' : 'Guardar Esquema'}
                         </button>
                       )}
                     </div>
@@ -643,20 +661,20 @@ const OCRAgentPage = () => {
                   
                   {/* Add Field Form */}
                   <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 className="text-sm font-medium text-gray-700 mb-3">Add New Field</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">Agregar Nuevo Campo</h4>
                     <div className="grid grid-cols-12 gap-4">
                       {/* Labels row */}
                       <div className="col-span-3">
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Field Name</label>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre del Campo</label>
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Type</label>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</label>
                       </div>
                       <div className="col-span-2">
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Required</label>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Requerido</label>
                       </div>
                       <div className="col-span-3">
-                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Description</label>
+                        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</label>
                       </div>
                       <div className="col-span-2"></div>
                       
@@ -667,7 +685,7 @@ const OCRAgentPage = () => {
                           value={newField.name}
                           onChange={(e) => handleNewFieldChange('name', e.target.value)}
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                          placeholder="e.g., invoice_number"
+                          placeholder="ej., numero_factura"
                         />
                       </div>
                       <div className="col-span-2">
@@ -700,7 +718,7 @@ const OCRAgentPage = () => {
                           value={newField.description}
                           onChange={(e) => handleNewFieldChange('description', e.target.value)}
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                          placeholder="Field description (optional)"
+                          placeholder="Descripción del campo (opcional)"
                         />
                       </div>
                       <div className="col-span-2 flex items-center h-10">
@@ -710,7 +728,7 @@ const OCRAgentPage = () => {
                             onClick={addField}
                             disabled={!newField.name.trim()}
                             className="inline-flex justify-center items-center w-8 h-8 border border-transparent text-sm font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Add field"
+                            title="Agregar campo"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
@@ -742,7 +760,7 @@ const OCRAgentPage = () => {
                         <svg className="-ml-0.5 mr-1.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                         </svg>
-                        Download
+                        Descargar
                       </button>
                     </div>
                   )}
@@ -754,7 +772,7 @@ const OCRAgentPage = () => {
                       onClick={resetForm}
                       className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
-                      Reset
+                      Reiniciar
                     </button>
                     <button
                       type="submit"
@@ -765,7 +783,7 @@ const OCRAgentPage = () => {
                           : 'bg-blue-600 hover:bg-blue-700'
                       } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                     >
-                      {isLoading ? 'Processing...' : 'Process Documents'}
+                      {isLoading ? 'Procesando...' : 'Procesar Documentos'}
                     </button>
                   </div>
                 </div>
@@ -775,8 +793,8 @@ const OCRAgentPage = () => {
                   <div className="mt-8 bg-white rounded-lg shadow overflow-hidden border border-gray-200">
                     <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">Extracted Data</h3>
-                        <p className="mt-1 text-sm text-gray-500">Structured data extracted from your document</p>
+                        <h3 className="text-lg font-medium text-gray-900">Datos Extraídos</h3>
+                        <p className="mt-1 text-sm text-gray-500">Datos estructurados extraídos de tu documento</p>
                       </div>
                       <div className="inline-flex rounded-md shadow-sm">
                         <button
@@ -788,7 +806,7 @@ const OCRAgentPage = () => {
                               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                         >
-                          Table View
+                          Vista de Tabla
                         </button>
                         <button
                           type="button"
@@ -799,7 +817,7 @@ const OCRAgentPage = () => {
                               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                         >
-                          JSON View
+                          Vista JSON
                         </button>
                       </div>
                     </div>
@@ -810,7 +828,7 @@ const OCRAgentPage = () => {
                             <thead className="bg-gray-50">
                               <tr>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  File
+                                  Archivo
                                 </th>
                                 {extractedData[0]?.structured && Object.keys(extractedData[0].structured).map((key) => (
                                   <th key={key} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -825,7 +843,7 @@ const OCRAgentPage = () => {
                                 return (
                                   <tr key={idx}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                      {item.file || `Document ${idx + 1}`}
+                                      {item.file || `Documento ${idx + 1}`}
                                     </td>
                                     {Object.entries(item.structured).map(([key, value], i) => (
                                       <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -860,11 +878,11 @@ const OCRAgentPage = () => {
         {activeTab === 'history' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Processing History</h2>
-              <p className="mt-1 text-sm text-gray-500">View previously processed documents</p>
+              <h2 className="text-xl font-semibold text-gray-900">Historial de Procesamiento</h2>
+              <p className="mt-1 text-sm text-gray-500">Ver documentos procesados anteriormente</p>
             </div>
             <div className="p-6">
-              <p className="text-gray-500 text-center py-8">No processing history available</p>
+              <p className="text-gray-500 text-center py-8">No hay historial de procesamiento disponible</p>
             </div>
           </div>
         )}
@@ -872,11 +890,11 @@ const OCRAgentPage = () => {
         {activeTab === 'settings' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">OCR Settings</h2>
-              <p className="mt-1 text-sm text-gray-500">Configure your OCR processing preferences</p>
+              <h2 className="text-xl font-semibold text-gray-900">Configuración OCR</h2>
+              <p className="mt-1 text-sm text-gray-500">Configura tus preferencias de procesamiento OCR</p>
             </div>
             <div className="p-6">
-              <p className="text-gray-500 text-center py-8">Settings will be available soon</p>
+              <p className="text-gray-500 text-center py-8">La configuración estará disponible pronto</p>
             </div>
           </div>
         )}
@@ -887,30 +905,30 @@ const OCRAgentPage = () => {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Save Schema</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{currentSchemaId ? 'Actualizar Esquema' : 'Guardar Esquema'}</h3>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Schema Name *
+                    Nombre del Esquema *
                   </label>
                   <input
                     type="text"
                     value={schemaName}
                     onChange={(e) => setSchemaName(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter schema name"
+                    placeholder="Ingresa el nombre del esquema"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
+                    Descripción
                   </label>
                   <textarea
                     value={schemaDescription}
                     onChange={(e) => setSchemaDescription(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows="3"
-                    placeholder="Enter schema description (optional)"
+                    placeholder="Ingresa la descripción del esquema (opcional)"
                   />
                 </div>
               </div>
@@ -919,19 +937,21 @@ const OCRAgentPage = () => {
                   type="button"
                   onClick={() => {
                     setShowSaveModal(false);
-                    setSchemaName('');
-                    setSchemaDescription('');
+                    if (!currentSchemaId) {
+                      setSchemaName('');
+                      setSchemaDescription('');
+                    }
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={saveSchema}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                 >
-                  Save
+                  {currentSchemaId ? 'Actualizar' : 'Guardar'}
                 </button>
               </div>
             </div>
@@ -945,7 +965,7 @@ const OCRAgentPage = () => {
           <div className="relative top-20 mx-auto p-5 border w-2/3 max-w-4xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Load Saved Schema</h3>
+                <h3 className="text-lg font-medium text-gray-900">Cargar Esquema Guardado</h3>
                 <button
                   onClick={() => setShowSchemaList(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -957,7 +977,7 @@ const OCRAgentPage = () => {
               </div>
               
               {savedSchemas.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No saved schemas found</p>
+                <p className="text-gray-500 text-center py-8">No se encontraron esquemas guardados</p>
               ) : (
                 <div className="max-h-96 overflow-y-auto">
                   <div className="grid gap-3">
@@ -970,7 +990,7 @@ const OCRAgentPage = () => {
                               <p className="text-sm text-gray-600 mt-1">{schema.description}</p>
                             )}
                             <p className="text-xs text-gray-500 mt-2">
-                              Created: {new Date(schema.created_at).toLocaleDateString()}
+                              Creado: {new Date(schema.created_at).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="ml-4 flex space-x-2">
@@ -978,13 +998,13 @@ const OCRAgentPage = () => {
                               onClick={() => loadSchema(schema)}
                               className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                             >
-                              Load
+                              Cargar
                             </button>
                             <button
                               onClick={() => deleteSchema(schema.id, schema.name)}
                               className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
                             >
-                              Delete
+                              Eliminar
                             </button>
                           </div>
                         </div>
@@ -1096,12 +1116,12 @@ const FileUploadArea = ({ selectedFiles, onFileSelect, onRemoveFile, fileInputRe
           </svg>
           <div className="flex justify-center text-sm text-gray-600">
             <label className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
-              <span>Upload files</span>
+              <span>Subir archivos</span>
             </label>
-            <p className="pl-1">or drag and drop</p>
+            <p className="pl-1">o arrastra y suelta</p>
           </div>
           <p className="text-xs text-gray-500">
-            Supports images (JPG, PNG, GIF, etc.) and PDFs up to 10MB
+            Soporta imágenes (JPG, PNG, GIF, etc.) y PDFs hasta 10MB
           </p>
         </div>
       </div>
@@ -1110,7 +1130,7 @@ const FileUploadArea = ({ selectedFiles, onFileSelect, onRemoveFile, fileInputRe
       {selectedFiles.length > 0 && (
         <div className="mt-4">
           <div className="flex items-center mb-2">
-            <h4 className="text-sm font-medium text-gray-700">Selected Files ({selectedFiles.length})</h4>
+            <h4 className="text-sm font-medium text-gray-700">Archivos Seleccionados ({selectedFiles.length})</h4>
             {selectedFiles.length > 0 && (
               <label className="flex items-center ml-4 text-sm text-gray-700">
                 <input
@@ -1119,7 +1139,7 @@ const FileUploadArea = ({ selectedFiles, onFileSelect, onRemoveFile, fileInputRe
                   onChange={(e) => toggleSelectAll(e.target.checked)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <span className="ml-2">Select All</span>
+                <span className="ml-2">Seleccionar Todo</span>
               </label>
             )}
           </div>
@@ -1160,7 +1180,7 @@ const FileUploadArea = ({ selectedFiles, onFileSelect, onRemoveFile, fileInputRe
                     }}
                     className="font-medium text-red-600 hover:text-red-500"
                   >
-                    Remove
+                    Eliminar
                   </button>
                 </div>
               </li>
@@ -1188,7 +1208,7 @@ const DocumentPreviewWrapper = ({ selectedFiles }) => {
       {selectedFiles.length > 1 && (
         <div className="mb-4">
           <label htmlFor="file-selector" className="block text-sm font-medium text-gray-700 mb-1">
-            Select file to preview
+            Selecciona archivo para previsualizar
           </label>
           <select
             id="file-selector"

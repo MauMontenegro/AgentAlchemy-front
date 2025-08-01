@@ -2,21 +2,15 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ModuleNavigation from './ModuleNavigation';
 import OCRAgentPage from './OCRAgentPage';
-import ChatAgent from './ChatAgent';
+
 
 const OCRModulePage = () => {
   const agents = [
     {
       id: 'ocr',
-      name: 'OCR Agent',
+      name: 'Agente OCR',
       path: '/modules/ocr/agent',
-      description: 'Optical Character Recognition and Document Processing'
-    },
-    {
-      id: 'chat',
-      name: 'Chat Agent',
-      path: '/modules/ocr/chat',
-      description: 'AI Assistant with chat interface'
+      description: 'Reconocimiento Óptico de Caracteres y Procesamiento de Documentos'
     }
   ];
 
@@ -24,7 +18,7 @@ const OCRModulePage = () => {
     <div className="flex flex-col h-full">
       {/* Module Navigation */}
       <ModuleNavigation 
-        moduleTitle="OCR & Documents" 
+        moduleTitle="OCR y Documentos" 
         agents={agents}
       />
       
@@ -34,7 +28,7 @@ const OCRModulePage = () => {
           {/* Default redirect to OCR Agent */}
           <Route path="/" element={<Navigate to="/modules/ocr/agent" replace />} />
           <Route path="/agent" element={<OCRAgentPage />} />
-          <Route path="/chat" element={<ChatAgent />} />
+
         </Routes>
       </div>
     </div>

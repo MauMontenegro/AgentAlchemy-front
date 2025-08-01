@@ -31,7 +31,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
       <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-white">
         <div className="flex flex-col space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Document Contexts</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Contextos de Documentos</h2>
             <button
               onClick={() => setShowNewContext(!showNewContext)}
               className="px-3 py-1.5 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors shadow-sm flex items-center"
@@ -41,14 +41,14 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Cancel
+                  Cancelar
                 </>
               ) : (
                 <>
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  New Context
+                  Nuevo Contexto
                 </>
               )}
             </button>
@@ -63,7 +63,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
                     type="text"
                     value={newContextName}
                     onChange={(e) => setNewContextName(e.target.value)}
-                    placeholder="Enter a name for the new context"
+                    placeholder="Ingresa un nombre para el nuevo contexto"
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     autoFocus
@@ -75,7 +75,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Create Context
+                    Crear Contexto
                   </button>
                 </div>
               </form>
@@ -85,7 +85,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
           {/* Context Selector */}
           <div className="space-y-1">
             <label htmlFor="context-select" className="block text-xs font-medium text-gray-700">
-              Current Context
+              Contexto Actual
             </label>
             <select
               id="context-select"
@@ -93,7 +93,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
               onChange={(e) => onContextChange(e.target.value)}
               className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
             >
-              <option value="">Select a context</option>
+              <option value="">Selecciona un contexto</option>
               {contexts.map((context) => (
                 <option key={context.id} value={context.id}>
                   {context.name} ({context.files?.length || 0} files)
@@ -118,7 +118,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
             </svg>
             <div className="flex text-sm text-gray-600 justify-center">
               <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                <span>Upload files</span>
+                <span>Subir archivos</span>
                 <input
                   type="file"
                   className="sr-only"
@@ -128,10 +128,10 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
                   disabled={!activeContext}
                 />
               </label>
-              <p className="pl-1">or drag and drop</p>
+              <p className="pl-1">o arrastra y suelta</p>
             </div>
             <p className="text-xs text-gray-500">
-              PDF, DOCX, TXT up to 10MB
+              PDF, DOCX, TXT hasta 10MB
             </p>
           </div>
         </div>
@@ -139,7 +139,7 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
 
       {currentContext && (
         <div className="border-t border-gray-200 p-4">
-          <h4 className="text-md font-medium mb-2">Documents in this context</h4>
+          <h4 className="text-md font-medium mb-2">Documentos en este contexto</h4>
           <div className="bg-white shadow overflow-hidden rounded-md">
             <ul className="divide-y divide-gray-200">
               {currentContext.files?.length > 0 ? (
@@ -157,14 +157,14 @@ const DocumentManager = ({ contexts, activeContext, onContextChange, onUpload, o
                         onClick={() => onRemoveDocument(activeContext, file.name)}
                         className="text-red-500 hover:text-red-700"
                       >
-                        Remove
+                        Eliminar
                       </button>
                     </div>
                   </li>
                 ))
               ) : (
                 <li className="px-4 py-4 text-center text-gray-500">
-                  No documents in this context
+                  No hay documentos en este contexto
                 </li>
               )}
             </ul>
@@ -478,7 +478,7 @@ const ChatAgent = () => {
           msg.id === botMessageId 
             ? { 
                 ...msg, 
-                content: 'Sorry, there was an error processing your request. Please try again.' 
+                content: 'Lo siento, hubo un error procesando tu solicitud. Por favor intenta de nuevo.' 
               } 
             : msg
         )
@@ -543,9 +543,9 @@ const ChatAgent = () => {
                 <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${message.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200'}`}>
                   {message.sender === 'user' ? '👤' : (
                     <img 
-                      src="https://scontent.fntr4-1.fna.fbcdn.net/v/t39.30808-6/396266821_839891844807944_7078854208263319270_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeH3zttMy7Lul7QXuiJZft_lxY8VRZmVXt_FjxVFmZVe328rrxNBrJjTno4vvOeBpHM&_nc_ohc=bgf4_ol864sQ7kNvwGvW0cQ&_nc_oc=Adn1RfJnb66jwGypxuQmDqEus8H4TaZagoSfI-9ijDIChhoq2sEggHxJkeRnGuGJ9w0&_nc_zt=23&_nc_ht=scontent.fntr4-1.fna&_nc_gid=yksT_VKtc-cTTOaGLcFC2g&oh=00_AfSzXzCb_4zcvOh9j__v-AHd_Y4tc1oZpx4g-UhMJFJnHg&oe=6888437D" 
-                      alt="MIA Bot" 
-                      className="h-8 w-8 rounded-full object-cover"
+                      src="/petroil.png" 
+                      alt="Petroil Bot" 
+                      className="h-6 w-6 rounded-full object-contain"
                     />
                   )}
                 </div>
@@ -578,7 +578,7 @@ const ChatAgent = () => {
                   
                   {message.sender === 'bot' && message.context && (
                     <div className="mt-1 text-xs text-gray-500">
-                      Context: {contexts.find(ctx => ctx.id === message.context)?.name || 'Default'}
+                      Contexto: {contexts.find(ctx => ctx.id === message.context)?.name || 'Predeterminado'}
                     </div>
                   )}
                 </div>
@@ -592,9 +592,9 @@ const ChatAgent = () => {
               <div className="flex items-start gap-4 w-full">
                 <div className="flex-shrink-0 h-8 w-8 rounded-full bg-white border border-gray-200 flex items-center justify-center">
                   <img 
-                    src="https://scontent.fntr4-1.fna.fbcdn.net/v/t39.30808-6/396266821_839891844807944_7078854208263319270_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeH3zttMy7Lul7QXuiJZft_lxY8VRZmVXt_FjxVFmZVe328rrxNBrJjTno4vvOeBpHM&_nc_ohc=bgf4_ol864sQ7kNvwGvW0cQ&_nc_oc=Adn1RfJnb66jwGypxuQmDqEus8H4TaZagoSfI-9ijDIChhoq2sEggHxJkeRnGuGJ9w0&_nc_zt=23&_nc_ht=scontent.fntr4-1.fna&_nc_gid=yksT_VKtc-cTTOaGLcFC2g&oh=00_AfSzXzCb_4zcvOh9j__v-AHd_Y4tc1oZpx4g-UhMJFJnHg&oe=6888437D" 
-                    alt="MIA Bot" 
-                    className="h-8 w-8 rounded-full object-cover"
+                    src="/petroil.png" 
+                    alt="Petroil Bot" 
+                    className="h-6 w-6 rounded-full object-contain"
                   />
                 </div>
                 <div className="flex-1">
@@ -623,7 +623,7 @@ const ChatAgent = () => {
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Message..."
+            placeholder="Mensaje..."
             rows={1}
             className="block w-full resize-none border-0 bg-transparent py-3 pl-4 pr-12 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
             onKeyDown={(e) => {
@@ -639,7 +639,7 @@ const ChatAgent = () => {
               disabled={!inputValue.trim() || isTyping}
               className="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send
+              Enviar
             </button>
           </div>
         </form>
@@ -661,7 +661,7 @@ const ChatAgent = () => {
             marginLeft: showDocumentMenu ? '0' : '-1px',
             transform: showDocumentMenu ? 'translateY(-50%)' : 'translateY(-50%) rotate(180deg)'
           }}
-          aria-label={showDocumentMenu ? 'Hide document menu' : 'Show document menu'}
+          aria-label={showDocumentMenu ? 'Ocultar menú de documentos' : 'Mostrar menú de documentos'}
         >
           ◀
         </button>

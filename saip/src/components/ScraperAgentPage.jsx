@@ -90,7 +90,7 @@ const ScraperAgentPage = () => {
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* Historial de URLs */}
         <div className="p-4 flex-1 overflow-y-auto">
-          <h2 className="text-sm font-medium text-gray-500 mb-2">Historial de consultas</h2>
+          <h2 className="text-sm font-medium text-gray-500 mb-2">Historial de Consultas</h2>
           {urlHistory.length > 0 ? (
             <ul className="space-y-4">
               {urlHistory.map((item) => (
@@ -111,7 +111,7 @@ const ScraperAgentPage = () => {
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-gray-500">No hay historial disponible.</p>
+            <p className="text-xs text-gray-500">No hay historial disponible</p>
           )}
         </div>
 

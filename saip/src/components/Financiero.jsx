@@ -150,12 +150,12 @@ const Financiero = () => {
           >
             <div className={`flex max-w-4xl w-full ${message.sender === 'user' ? 'justify-end' : ''}`}>
               <div className={`flex ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'} items-start gap-6 w-full`}>
-                <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${message.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border-2 border-gray-200 shadow-sm'}`}>
+                <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${message.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-white border-2 border-gray-200 shadow-sm'}`}>
                   {message.sender === 'user' ? '👤' : (
                     <img 
-                      src="https://scontent.fntr4-1.fna.fbcdn.net/v/t39.30808-6/396266821_839891844807944_7078854208263319270_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeH3zttMy7Lul7QXuiJZft_lxY8VRZmVXt_FjxVFmZVe328rrxNBrJjTno4vvOeBpHM&_nc_ohc=bgf4_ol864sQ7kNvwGvW0cQ&_nc_oc=Adn1RfJnb66jwGypxuQmDqEus8H4TaZagoSfI-9ijDIChhoq2sEggHxJkeRnGuGJ9w0&_nc_zt=23&_nc_ht=scontent.fntr4-1.fna&_nc_gid=yksT_VKtc-cTTOaGLcFC2g&oh=00_AfSzXzCb_4zcvOh9j__v-AHd_Y4tc1oZpx4g-UhMJFJnHg&oe=6888437D" 
-                      alt="MIA Bot" 
-                      className="h-10 w-10 rounded-full object-cover"
+                      src="/petroil.png" 
+                      alt="Petroil Bot" 
+                      className="h-6 w-6 rounded-full object-contain"
                     />
                   )}
                 </div>
@@ -186,7 +186,7 @@ const Financiero = () => {
                   {/* SQL Query Display */}
                   {message.sqlQuery && (
                     <div className="mt-4 bg-gray-900 text-green-400 p-4 rounded-xl text-xs font-mono border border-gray-700">
-                      <div className="text-gray-400 mb-2 font-medium">SQL Query:</div>
+                      <div className="text-gray-400 mb-2 font-medium">Consulta SQL:</div>
                       <pre className="whitespace-pre-wrap">{message.sqlQuery}</pre>
                     </div>
                   )}
