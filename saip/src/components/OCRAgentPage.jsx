@@ -253,7 +253,7 @@ const OCRAgentPage = () => {
       
       const schemaString = JSON.stringify(formattedSchema);
       
-      // Split files into batches (X files per batch to avoid payload limits)
+      // Split files into batches (2 files per batch to avoid payload limits)
       const BATCH_SIZE = 10;
       const batches = [];
       for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
@@ -262,6 +262,7 @@ const OCRAgentPage = () => {
       
       setBatchProgress({ current: 0, total: batches.length });
       console.log(`Processing ${filesToProcess.length} files in ${batches.length} batches`);
+      console.log('Batch progress set to:', { current: 0, total: batches.length });
       toast.info(`Procesando ${filesToProcess.length} archivos en ${batches.length} lotes...`);
       
       // Process batches sequentially
@@ -269,6 +270,7 @@ const OCRAgentPage = () => {
         try {
           await processBatch(batches[i], i, batches.length, schemaString);
           setBatchProgress({ current: i + 1, total: batches.length });
+          console.log('Batch progress updated to:', { current: i + 1, total: batches.length });
           
           // Small delay between batches to avoid overwhelming the server
           if (i < batches.length - 1) {
@@ -278,6 +280,7 @@ const OCRAgentPage = () => {
           console.error(`Batch ${i + 1} failed:`, batchError);
           toast.error(`Error en lote ${i + 1}: ${batchError.message}`);
           setBatchProgress({ current: i + 1, total: batches.length });
+          console.log('Batch progress updated (error) to:', { current: i + 1, total: batches.length });
           // Continue with next batch instead of stopping
         }
       }
@@ -860,6 +863,44 @@ const OCRAgentPage = () => {
                     </div>
                   </div>
                 </div>
+                
+                {/* Progress Bar */}
+                {isLoading && (
+                  <div className="mt-6 bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        {batchProgress.total > 0 ? 
+                          `Procesando lotes: ${batchProgress.current} de ${batchProgress.total}` :
+                          'Preparando procesamiento...'
+                        }
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {batchProgress.total > 0 ? 
+                          `${Math.round((batchProgress.current / batchProgress.total) * 100)}%` :
+                          '0%'
+                        }
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                        style={{ 
+                          width: batchProgress.total > 0 ? 
+                            `${(batchProgress.current / batchProgress.total) * 100}%` : 
+                            '0%'
+                        }}
+                      ></div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500 text-center">
+                      {batchProgress.total === 0 ? 
+                        'Iniciando...' :
+                        batchProgress.current === batchProgress.total ? 
+                          'Completado!' : 
+                          `Lote ${batchProgress.current + 1} en progreso...`
+                      }
+                    </div>
+                  </div>
+                )}
                 
                 <div className="mt-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
                   {/* Download Section - Only show when there are results */}
