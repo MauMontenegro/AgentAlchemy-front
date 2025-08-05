@@ -144,199 +144,144 @@ const OCRAgentPage = () => {
     return JSON.stringify(schema);
   };
 
-  // Handle form submission
+  // Process files in batches
+  const processBatch = async (batch, batchIndex, totalBatches, schemaString) => {
+    const formData = new FormData();
+    
+    // Add files to batch
+    batch.forEach(file => {
+      formData.append('files', file);
+    });
+    
+    // Add schema
+    formData.append('schema', schemaString);
+    
+    console.log(`Processing batch ${batchIndex + 1}/${totalBatches} with ${batch.length} files`);
+    
+    const response = await authenticatedFetch('/ocragent/extract', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/x-ndjson',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Batch ${batchIndex + 1} failed: ${response.status} - ${errorText}`);
+    }
+
+    // Process streaming response
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    const batchResults = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      buffer += chunk;
+      
+      let newlineIndex;
+      while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
+        
+        if (!line) continue;
+        
+        try {
+          const data = JSON.parse(line);
+          batchResults.push(data);
+          
+          // Update UI in real-time
+          setResult(prev => [...prev, data]);
+          if (data.structured) {
+            setExtractedData(prev => [...prev, data]);
+          }
+          
+          if (data.file && data.structured) {
+            toast.success(`Procesado: ${data.file} (Lote ${batchIndex + 1})`);
+          } else if (data.error) {
+            toast.error(`Error: ${data.file || 'archivo'} - ${data.error}`);
+          }
+        } catch (e) {
+          console.error('Error parsing JSON:', e);
+        }
+      }
+    }
+    
+    return batchResults;
+  };
+
+  // Handle form submission with batch processing
   const handleSubmit = async (e) => {
-    console.log('Form submit triggered');
     e.preventDefault();
     
-    console.log('Selected files:', selectedFiles);
     if (filesToProcess.length === 0) {
-      console.log('No files selected for processing, showing error');
       toast.error('Por favor selecciona al menos un archivo para procesar');
       return;
     }
 
     const schema = buildSchema();
     const schemaObj = JSON.parse(schema);
-    console.log('Schema object:', schemaObj);
     
     if (Object.keys(schemaObj).length === 0) {
-      console.log('No fields in schema, showing error');
       toast.error('Por favor agrega al menos un campo al esquema');
       return;
     }
 
-    console.log('Setting loading state');
     setIsLoading(true);
-    setResult([]); // Initialize as array to store multiple results
+    setResult([]);
     setExtractedData([]);
 
     try {
-      const formData = new FormData();
-      
-      // Verify we have files to process
-      if (!filesToProcess || filesToProcess.length === 0) {
-        throw new Error('No hay archivos seleccionados para procesar');
-      }
-      
-      // Append all selected files to form data with the field name 'files' (plural)
-      console.log('Appending selected files to form data');
-      filesToProcess.forEach((file, index) => {
-        if (!file) {
-          console.warn(`Skipping null/undefined file at index ${index}`);
-          return;
-        }
-        console.log(`Appending file [${index}]:`, 
-          'Name:', file.name, 
-          'Type:', file.type, 
-          'Size:', file.size, 
-          'Is File:', file instanceof File ? 'Yes' : 'No');
-          
-        formData.append('files', file);
-      });
-      
-      // Verify files were added to form data
-      const fileEntries = Array.from(formData.entries())
-        .filter(([key]) => key === 'files');
-        
-      console.log(`Added ${fileEntries.length} files to form data`);
-      if (fileEntries.length === 0) {
-        throw new Error('No se agregaron archivos válidos al formulario');
-      }
-      
-      // Build the schema object
-      console.log('Preparing schema');
+      // Prepare schema
       const formattedSchema = {};
       fields.forEach(field => {
         if (field.name && field.name.trim() !== '') {
           formattedSchema[field.name] = [
-            field.type || 'str',  // Default to string if type is not specified
+            field.type || 'str',
             field.required ? 'required' : 'optional',
             field.description || ''
           ];
         }
       });
       
-      // Ensure we have at least one field in the schema
-      if (Object.keys(formattedSchema).length === 0) {
-        throw new Error('El esquema debe contener al menos un campo válido');
-      }
-      
       const schemaString = JSON.stringify(formattedSchema);
-      console.log('Schema string:', schemaString);
       
-      // Verify schema is valid JSON
-      try {
-        JSON.parse(schemaString);
-      } catch (e) {
-        console.error('Invalid JSON schema:', e);
-        throw new Error('Error al crear un esquema JSON válido');
+      // Split files into batches (X files per batch to avoid payload limits)
+      const BATCH_SIZE = 10;
+      const batches = [];
+      for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
+        batches.push(filesToProcess.slice(i, i + BATCH_SIZE));
       }
       
-      // Add schema to form data
-      formData.append('schema', schemaString);
+      console.log(`Processing ${filesToProcess.length} files in ${batches.length} batches`);
+      toast.info(`Procesando ${filesToProcess.length} archivos en ${batches.length} lotes...`);
       
-      // Log the form data before sending
-      console.log('FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
-      }
-
-      const url = '/ocragent/extract';
-      console.log('Sending request to:', url);
-      
-      const response = await authenticatedFetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/x-ndjson',
-        },
-        body: formData,
-      });
-
-      console.log('Response status:', response.status);
-      
-      // Log response headers
-      console.log('Response headers:');
-      response.headers.forEach((value, key) => {
-        console.log(`${key}: ${value}`);
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response text:', errorText);
-        
+      // Process batches sequentially
+      for (let i = 0; i < batches.length; i++) {
         try {
-          // Try to parse the error as JSON
-          const errorJson = JSON.parse(errorText);
-          throw new Error(`Server error (${response.status}): ${JSON.stringify(errorJson)}`);
-        } catch (e) {
-          throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+          await processBatch(batches[i], i, batches.length, schemaString);
+          
+          // Small delay between batches to avoid overwhelming the server
+          if (i < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (batchError) {
+          console.error(`Batch ${i + 1} failed:`, batchError);
+          toast.error(`Error en lote ${i + 1}: ${batchError.message}`);
+          // Continue with next batch instead of stopping
         }
       }
       
-      if (!response.body) {
-        throw new Error('No hay cuerpo de respuesta');
-      }
-
-      // Process the streaming response
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      const results = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        // Decode the chunk and add to buffer
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-        
-        // Process complete JSON objects in the buffer
-        let newlineIndex;
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-          const line = buffer.slice(0, newlineIndex).trim();
-          buffer = buffer.slice(newlineIndex + 1);
-          
-          if (!line) continue; // Skip empty lines
-          
-          try {
-            const data = JSON.parse(line);
-            console.log('Received data chunk:', data);
-            
-            // Add to results array
-            results.push(data);
-            
-            // Update state with new results
-            setResult(prevResults => {
-              const newResults = [...prevResults, data];
-              return newResults;
-            });
-            
-            // Update extracted data with the full result object
-            if (data.structured) {
-              setExtractedData(prev => {
-                const newData = [...prev, data];
-                return newData;
-              });
-            }
-            
-            // Show success toast for each processed file
-            if (data.file && data.structured) {
-              toast.success(`Procesado: ${data.file}`);
-            } else if (data.error) {
-              toast.error(`Error procesando ${data.file || 'archivo'}: ${data.error}`);
-            }
-          } catch (e) {
-            console.error('Error parsing JSON:', e, 'Raw data:', line);
-          }
-        }
-      }
+      toast.success('Procesamiento completado!');
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast.error(`Error al procesar documento: ${error.message}`);
+      toast.error(`Error al procesar documentos: ${error.message}`);
     } finally {
-      console.log('Cleaning up, setting loading to false');
       setIsLoading(false);
     }
   };
@@ -953,7 +898,7 @@ const OCRAgentPage = () => {
                           : 'bg-blue-600 hover:bg-blue-700'
                       } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
                     >
-                      {isLoading ? 'Procesando...' : 'Procesar Documentos'}
+                      {isLoading ? `Procesando en lotes...` : `Procesar ${filesToProcess.length} Documentos`}
                     </button>
                   </div>
                 </div>
