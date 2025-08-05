@@ -34,6 +34,7 @@ const OCRAgentPage = () => {
   const [showSchemaList, setShowSchemaList] = useState(false);
   const [currentSchemaId, setCurrentSchemaId] = useState(null);
   const [editingField, setEditingField] = useState(null);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   
   // Debug logging for editingField changes
   React.useEffect(() => {
@@ -235,6 +236,7 @@ const OCRAgentPage = () => {
     setIsLoading(true);
     setResult([]);
     setExtractedData([]);
+    setBatchProgress({ current: 0, total: 0 });
 
     try {
       // Prepare schema
@@ -258,6 +260,7 @@ const OCRAgentPage = () => {
         batches.push(filesToProcess.slice(i, i + BATCH_SIZE));
       }
       
+      setBatchProgress({ current: 0, total: batches.length });
       console.log(`Processing ${filesToProcess.length} files in ${batches.length} batches`);
       toast.info(`Procesando ${filesToProcess.length} archivos en ${batches.length} lotes...`);
       
@@ -265,6 +268,7 @@ const OCRAgentPage = () => {
       for (let i = 0; i < batches.length; i++) {
         try {
           await processBatch(batches[i], i, batches.length, schemaString);
+          setBatchProgress({ current: i + 1, total: batches.length });
           
           // Small delay between batches to avoid overwhelming the server
           if (i < batches.length - 1) {
@@ -273,6 +277,7 @@ const OCRAgentPage = () => {
         } catch (batchError) {
           console.error(`Batch ${i + 1} failed:`, batchError);
           toast.error(`Error en lote ${i + 1}: ${batchError.message}`);
+          setBatchProgress({ current: i + 1, total: batches.length });
           // Continue with next batch instead of stopping
         }
       }
@@ -283,6 +288,7 @@ const OCRAgentPage = () => {
       toast.error(`Error al procesar documentos: ${error.message}`);
     } finally {
       setIsLoading(false);
+      setBatchProgress({ current: 0, total: 0 });
     }
   };
 
