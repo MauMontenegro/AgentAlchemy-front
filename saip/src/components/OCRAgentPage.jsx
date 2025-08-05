@@ -33,6 +33,12 @@ const OCRAgentPage = () => {
   const [savedSchemas, setSavedSchemas] = useState([]);
   const [showSchemaList, setShowSchemaList] = useState(false);
   const [currentSchemaId, setCurrentSchemaId] = useState(null);
+  const [editingField, setEditingField] = useState(null);
+  
+  // Debug logging for editingField changes
+  React.useEffect(() => {
+    console.log('editingField changed to:', editingField);
+  }, [editingField]);
   const fileInputRef = useRef(null);
 
   // Handle file selection
@@ -63,6 +69,36 @@ const OCRAgentPage = () => {
   const removeField = (index) => {
     const newFields = fields.filter((_, i) => i !== index);
     setFields(newFields);
+    setEditingField(null);
+  };
+
+  // Update field
+  const updateField = (index, updatedField) => {
+    const newFields = [...fields];
+    newFields[index] = updatedField;
+    setFields(newFields);
+  };
+
+  // Save and exit edit mode
+  const saveAndExitEdit = (index, updatedField) => {
+    updateField(index, updatedField);
+    setEditingField(null);
+  };
+
+  // Start editing a field
+  const startEditing = (index, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingField(index);
+  };
+
+  // Cancel editing
+  const cancelEditing = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setEditingField(null);
   };
 
   // Remove file
@@ -603,31 +639,165 @@ const OCRAgentPage = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                          {fields.map((field, index) => (
+                          {fields.map((field, index) => {
+                            console.log(`Rendering field ${index}, editingField is:`, editingField);
+                            return (
                             <tr key={index}>
                               <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                {field.name}
+                                {editingField === index ? (
+                                  <input
+                                    type="text"
+                                    defaultValue={field.name}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onKeyDown={(e) => {
+                                      e.stopPropagation();
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        const newValue = e.target.value.trim();
+                                        if (newValue) {
+                                          saveAndExitEdit(index, {...field, name: newValue});
+                                        }
+                                      }
+                                      if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        cancelEditing();
+                                      }
+                                    }}
+                                    autoFocus
+                                    onFocus={(e) => e.target.select()}
+                                  />
+                                ) : (
+                                  <span className="px-2 py-1 inline-block min-w-[80px]">
+                                    {field.name || 'Sin nombre'}
+                                  </span>
+                                )}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {field.type}
+                                {editingField === index ? (
+                                  <select
+                                    defaultValue={field.type}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    onChange={(e) => {
+                                      e.preventDefault();
+                                      updateField(index, {...field, type: e.target.value});
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        cancelEditing();
+                                      }
+                                    }}
+                                  >
+                                    {FIELD_TYPES.map((type) => (
+                                      <option key={type} value={type}>{type}</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span className="px-2 py-1 inline-block min-w-[60px]">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                      {field.type}
+                                    </span>
+                                  </span>
+                                )}
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {field.required ? 'Sí' : 'No'}
+                                {editingField === index ? (
+                                  <div className="flex items-center space-x-2">
+                                    <input
+                                      type="checkbox"
+                                      defaultChecked={field.required}
+                                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                      onChange={(e) => {
+                                        e.preventDefault();
+                                        updateField(index, {...field, required: e.target.checked});
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Escape') {
+                                          e.preventDefault();
+                                          cancelEditing();
+                                        }
+                                      }}
+                                    />
+                                    <span className="text-xs text-gray-500">Requerido</span>
+                                  </div>
+                                ) : (
+                                  <span className="px-2 py-1 inline-block min-w-[40px]">
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                      field.required 
+                                        ? 'bg-red-100 text-red-800' 
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {field.required ? 'Sí' : 'No'}
+                                    </span>
+                                  </span>
+                                )}
                               </td>
                               <td className="px-3 py-4 text-sm text-gray-500">
-                                {field.description || '-'}
+                                {editingField === index ? (
+                                  <textarea
+                                    defaultValue={field.description}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    rows="2"
+                                    onChange={(e) => {
+                                      updateField(index, {...field, description: e.target.value});
+                                    }}
+                                    onKeyDown={(e) => {
+                                      e.stopPropagation();
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        setEditingField(null);
+                                      }
+                                      if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        cancelEditing();
+                                      }
+                                    }}
+                                    placeholder="Descripción del campo..."
+                                  />
+                                ) : (
+                                  <span className="px-2 py-1 inline-block min-w-[100px] max-w-[200px]">
+                                    <span className="text-sm text-gray-600 truncate block">
+                                      {field.description || 'Sin descripción'}
+                                    </span>
+                                  </span>
+                                )}
                               </td>
                               <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <button
-                                  type="button"
-                                  onClick={() => removeField(index)}
-                                  className="text-red-600 hover:text-red-900"
-                                >
-                                  Eliminar
-                                </button>
+                                <div className="flex items-center justify-end space-x-2">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      console.log('Edit button clicked for index:', index, 'Current editing:', editingField);
+                                      if (editingField === index) {
+                                        // Save mode - exit editing
+                                        const nameInput = e.target.closest('tr').querySelector('input[type="text"]');
+                                        if (nameInput && nameInput.value.trim()) {
+                                          updateField(index, {...field, name: nameInput.value.trim()});
+                                        }
+                                        setEditingField(null);
+                                      } else {
+                                        // Edit mode - start editing
+                                        setEditingField(index);
+                                      }
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50"
+                                  >
+                                    {editingField === index ? 'Guardar' : 'Editar'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeField(index)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
