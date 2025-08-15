@@ -46,10 +46,29 @@ const OCRAgentPage = () => {
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0) {
-      const newFiles = [...selectedFiles, ...files];
-      setSelectedFiles(newFiles);
-      // Auto-select new files for processing
-      setFilesToProcess(prev => [...prev, ...files]);
+      // Validate file sizes (25MB limit for PDFs, 10MB for images)
+      const validFiles = [];
+      const invalidFiles = [];
+      
+      files.forEach(file => {
+        const maxSize = file.type === 'application/pdf' ? 10 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          invalidFiles.push(file.name);
+        } else {
+          validFiles.push(file);
+        }
+      });
+      
+      if (invalidFiles.length > 0) {
+        toast.error(`Archivos demasiado grandes: ${invalidFiles.join(', ')}`);
+      }
+      
+      if (validFiles.length > 0) {
+        const newFiles = [...selectedFiles, ...validFiles];
+        setSelectedFiles(newFiles);
+        // Auto-select new files for processing
+        setFilesToProcess(prev => [...prev, ...validFiles]);
+      }
     }
   };
 
@@ -202,10 +221,12 @@ const OCRAgentPage = () => {
             setExtractedData(prev => [...prev, data]);
           }
           
-          if (data.file && data.structured) {
-            toast.success(`Procesado: ${data.file} (Lote ${batchIndex + 1})`);
+          if ((data.file || data.files) && data.structured) {
+            const fileName = data.file || (data.files ? data.files.join(', ') : 'archivo');
+            toast.success(`Procesado: ${fileName} (Lote ${batchIndex + 1})`);
           } else if (data.error) {
-            toast.error(`Error: ${data.file || 'archivo'} - ${data.error}`);
+            const fileName = data.file || (data.files ? data.files.join(', ') : 'archivo');
+            toast.error(`Error: ${fileName} - ${data.error}`);
           }
         } catch (e) {
           console.error('Error parsing JSON:', e);
@@ -253,8 +274,8 @@ const OCRAgentPage = () => {
       
       const schemaString = JSON.stringify(formattedSchema);
       
-      // Split files into batches (2 files per batch to avoid payload limits)
-      const BATCH_SIZE = 10;
+      // Split files into batches (AWS Textract 10MB limit, FastAPI 16MB limit)
+      const BATCH_SIZE = 3;
       const batches = [];
       for (let i = 0; i < filesToProcess.length; i += BATCH_SIZE) {
         batches.push(filesToProcess.slice(i, i + BATCH_SIZE));
@@ -313,7 +334,8 @@ const OCRAgentPage = () => {
     const rows = data.map(item => {
       if (!item.structured) return '';
       
-      const row = [item.file];
+      const fileName = item.file || (item.files ? item.files.join('; ') : '');
+      const row = [fileName];
       headers.slice(1).forEach(header => {
         const value = item.structured[header];
         // Convert arrays/objects to string
@@ -1005,7 +1027,7 @@ const OCRAgentPage = () => {
                                 return (
                                   <tr key={idx}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                      {item.file || `Documento ${idx + 1}`}
+                                      {item.file || (item.files ? item.files.join(', ') : `Documento ${idx + 1}`)}
                                     </td>
                                     {Object.entries(item.structured).map(([key, value], i) => (
                                       <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
