@@ -35,6 +35,7 @@ const OCRAgentPage = () => {
   const [currentSchemaId, setCurrentSchemaId] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [schemaChanged, setSchemaChanged] = useState(false);
   
   // Debug logging for editingField changes
   React.useEffect(() => {
@@ -82,6 +83,7 @@ const OCRAgentPage = () => {
     if (newField.name.trim()) {
       setFields([...fields, { ...newField }]);
       setNewField({ ...initialField }); // Reset the form
+      setSchemaChanged(true);
     }
   };
 
@@ -90,6 +92,7 @@ const OCRAgentPage = () => {
     const newFields = fields.filter((_, i) => i !== index);
     setFields(newFields);
     setEditingField(null);
+    setSchemaChanged(true);
   };
 
   // Update field
@@ -97,6 +100,7 @@ const OCRAgentPage = () => {
     const newFields = [...fields];
     newFields[index] = updatedField;
     setFields(newFields);
+    setSchemaChanged(true);
   };
 
   // Save and exit edit mode
@@ -415,6 +419,7 @@ const OCRAgentPage = () => {
       setSchemaName(schema.name);
       setSchemaDescription(schema.description || '');
       setShowSchemaList(false);
+      setSchemaChanged(false);
       toast.success(`Esquema "${schema.name}" cargado exitosamente!`);
     } catch (error) {
       console.error('Error loading schema:', error);
@@ -502,9 +507,11 @@ const OCRAgentPage = () => {
 
       toast.success(currentSchemaId ? '¡Esquema actualizado exitosamente!' : '¡Esquema guardado exitosamente!');
       setShowSaveModal(false);
-      setSchemaName('');
-      setSchemaDescription('');
-      setCurrentSchemaId(null);
+      if (!currentSchemaId) {
+        setSchemaName('');
+        setSchemaDescription('');
+      }
+      setSchemaChanged(false);
       loadSavedSchemas(); // Refresh the list
     } catch (error) {
       console.error('Error saving schema:', error);
@@ -793,7 +800,7 @@ const OCRAgentPage = () => {
                       >
                         Cargar Esquema
                       </button>
-                      {fields.length > 0 && (
+                      {fields.length > 0 && (!currentSchemaId || schemaChanged) && (
                         <button
                           type="button"
                           onClick={() => setShowSaveModal(true)}
