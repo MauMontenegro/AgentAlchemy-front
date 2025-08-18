@@ -36,6 +36,10 @@ const OCRAgentPage = () => {
   const [editingField, setEditingField] = useState(null);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const [schemaChanged, setSchemaChanged] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [csvSpacing, setCsvSpacing] = useState('');
+  const [showCsvSpacingModal, setShowCsvSpacingModal] = useState(false);
+  const [includeFilename, setIncludeFilename] = useState(true);
   
   // Debug logging for editingField changes
   React.useEffect(() => {
@@ -93,6 +97,45 @@ const OCRAgentPage = () => {
     setFields(newFields);
     setEditingField(null);
     setSchemaChanged(true);
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    
+    if (dragIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+    
+    const newFields = [...fields];
+    const draggedField = newFields[dragIndex];
+    
+    // Remove the dragged field
+    newFields.splice(dragIndex, 1);
+    
+    // Insert at new position
+    newFields.splice(dropIndex, 0, draggedField);
+    
+    setFields(newFields);
+    setSchemaChanged(true);
+    setDraggedIndex(null);
   };
 
   // Update field
@@ -320,36 +363,103 @@ const OCRAgentPage = () => {
     }
   };
 
-  // Convert data to CSV format
-  const convertToCSV = (data) => {
-    if (!data || data.length === 0) return '';
+  // Parse CSV spacing pattern (e.g., "2*,1,1*,2,4*,3")
+  const parseCsvSpacing = (pattern) => {
+    if (!pattern.trim()) return null;
     
-    // Get all unique keys from all objects
-    const allKeys = new Set();
-    data.forEach(item => {
-      if (item.structured) {
-        Object.keys(item.structured).forEach(key => allKeys.add(key));
+    const parts = pattern.split(',').map(p => p.trim());
+    const result = [];
+    
+    parts.forEach(part => {
+      if (part.includes('*')) {
+        // Blank spaces (e.g., "2*" = 2 blank columns)
+        const count = parseInt(part.replace('*', ''));
+        for (let i = 0; i < count; i++) {
+          result.push({ type: 'blank' });
+        }
+      } else {
+        // Field reference (e.g., "1" = first field)
+        const fieldIndex = parseInt(part) - 1;
+        result.push({ type: 'field', index: fieldIndex });
       }
     });
     
-    const headers = ['file', ...Array.from(allKeys)];
+    return result;
+  };
+
+  // Convert data to CSV format with custom spacing
+  const convertToCSV = (data) => {
+    if (!data || data.length === 0) return '';
     
-    // Create CSV rows
+    const spacingPattern = parseCsvSpacing(csvSpacing);
+    
+    if (!spacingPattern) {
+      // Default behavior - no spacing
+      const allKeys = new Set();
+      data.forEach(item => {
+        if (item.structured) {
+          Object.keys(item.structured).forEach(key => allKeys.add(key));
+        }
+      });
+      
+      const headers = includeFilename ? ['file', ...Array.from(allKeys)] : [...Array.from(allKeys)];
+      
+      const rows = data.map(item => {
+        if (!item.structured) return '';
+        
+        const fileName = item.file || (item.files ? item.files.join('; ') : '');
+        const row = includeFilename ? [fileName] : [];
+        const dataHeaders = includeFilename ? headers.slice(1) : headers;
+        dataHeaders.forEach(header => {
+          const value = item.structured[header];
+          const cellValue = Array.isArray(value) || (value && typeof value === 'object')
+            ? JSON.stringify(value)
+            : value || '';
+          const escaped = String(cellValue).replace(/"/g, '""');
+          row.push(`"${escaped}"`);
+        });
+        return row.join(',');
+      });
+      
+      return [headers.join(','), ...rows].join('\n');
+    }
+    
+    // Custom spacing behavior
+    const fieldNames = fields.map(f => f.name).filter(Boolean);
+    
+    // Create headers with spacing
+    const headers = includeFilename ? ['file'] : [];
+    spacingPattern.forEach(item => {
+      if (item.type === 'blank') {
+        headers.push('');
+      } else if (item.type === 'field' && fieldNames[item.index]) {
+        headers.push(fieldNames[item.index]);
+      }
+    });
+    
+    // Create rows with spacing
     const rows = data.map(item => {
       if (!item.structured) return '';
       
       const fileName = item.file || (item.files ? item.files.join('; ') : '');
-      const row = [fileName];
-      headers.slice(1).forEach(header => {
-        const value = item.structured[header];
-        // Convert arrays/objects to string
-        const cellValue = Array.isArray(value) || (value && typeof value === 'object')
-          ? JSON.stringify(value)
-          : value || '';
-        // Escape quotes and wrap in quotes if contains comma or newline
-        const escaped = String(cellValue).replace(/"/g, '""');
-        row.push(`"${escaped}"`);
+      const row = includeFilename ? [fileName] : [];
+      
+      spacingPattern.forEach(patternItem => {
+        if (patternItem.type === 'blank') {
+          row.push('');
+        } else if (patternItem.type === 'field' && fieldNames[patternItem.index]) {
+          const fieldName = fieldNames[patternItem.index];
+          const value = item.structured[fieldName];
+          const cellValue = Array.isArray(value) || (value && typeof value === 'object')
+            ? JSON.stringify(value)
+            : value || '';
+          const escaped = String(cellValue).replace(/"/g, '""');
+          row.push(`"${escaped}"`);
+        } else {
+          row.push('');
+        }
       });
+      
       return row.join(',');
     });
     
@@ -612,7 +722,12 @@ const OCRAgentPage = () => {
                       <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                           <tr>
-                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Nombre del Campo</th>
+                            <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
+                              <div className="flex items-center">
+                                <span className="w-6"></span>
+                                Nombre del Campo
+                              </div>
+                            </th>
                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Tipo</th>
                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Requerido</th>
                             <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Descripción</th>
@@ -625,35 +740,54 @@ const OCRAgentPage = () => {
                           {fields.map((field, index) => {
                             console.log(`Rendering field ${index}, editingField is:`, editingField);
                             return (
-                            <tr key={index}>
+                            <tr 
+                              key={index}
+                              draggable={editingField !== index}
+                              onDragStart={(e) => handleDragStart(e, index)}
+                              onDragEnd={handleDragEnd}
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDrop(e, index)}
+                              className={`${
+                                editingField !== index ? 'hover:bg-gray-50' : ''
+                              } ${
+                                draggedIndex === index ? 'opacity-50 bg-blue-50' : ''
+                              } transition-all duration-200`}
+                            >
                               <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                                {editingField === index ? (
-                                  <input
-                                    type="text"
-                                    defaultValue={field.name}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    onKeyDown={(e) => {
-                                      e.stopPropagation();
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        const newValue = e.target.value.trim();
-                                        if (newValue) {
-                                          saveAndExitEdit(index, {...field, name: newValue});
+                                <div className="flex items-center">
+                                  {editingField !== index && (
+                                    <svg className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0 cursor-move hover:text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M7 2a1 1 0 000 2h6a1 1 0 100-2H7zM7 8a1 1 0 000 2h6a1 1 0 100-2H7zM7 14a1 1 0 100 2h6a1 1 0 100-2H7z"></path>
+                                    </svg>
+                                  )}
+                                  {editingField === index ? (
+                                    <input
+                                      type="text"
+                                      defaultValue={field.name}
+                                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      onKeyDown={(e) => {
+                                        e.stopPropagation();
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          const newValue = e.target.value.trim();
+                                          if (newValue) {
+                                            saveAndExitEdit(index, {...field, name: newValue});
+                                          }
                                         }
-                                      }
-                                      if (e.key === 'Escape') {
-                                        e.preventDefault();
-                                        cancelEditing();
-                                      }
-                                    }}
-                                    autoFocus
-                                    onFocus={(e) => e.target.select()}
-                                  />
-                                ) : (
-                                  <span className="px-2 py-1 inline-block min-w-[80px]">
-                                    {field.name || 'Sin nombre'}
-                                  </span>
-                                )}
+                                        if (e.key === 'Escape') {
+                                          e.preventDefault();
+                                          cancelEditing();
+                                        }
+                                      }}
+                                      autoFocus
+                                      onFocus={(e) => e.target.select()}
+                                    />
+                                  ) : (
+                                    <span className="px-2 py-1 inline-block min-w-[80px]">
+                                      {field.name || 'Sin nombre'}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                 {editingField === index ? (
@@ -943,6 +1077,26 @@ const OCRAgentPage = () => {
                         <option value="json">JSON</option>
                         <option value="csv">CSV</option>
                       </select>
+                      {downloadFormat === 'csv' && (
+                        <>
+                          <label className="flex items-center text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={includeFilename}
+                              onChange={(e) => setIncludeFilename(e.target.checked)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2"
+                            />
+                            Incluir nombre de archivo
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowCsvSpacingModal(true)}
+                            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            Espaciado CSV
+                          </button>
+                        </>
+                      )}
                       <button
                         type="button"
                         onClick={handleDownload}
@@ -1143,6 +1297,112 @@ const OCRAgentPage = () => {
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                 >
                   {currentSchemaId ? 'Actualizar' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* CSV Spacing Modal */}
+      {showCsvSpacingModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-2/3 max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Configurar Espaciado CSV</h3>
+                <button
+                  onClick={() => setShowCsvSpacingModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Patrón de Espaciado
+                  </label>
+                  <input
+                    type="text"
+                    value={csvSpacing}
+                    onChange={(e) => setCsvSpacing(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: 2*,1,1*,2,4*,3"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Usa números para campos (1={fields[0]?.name || 'campo1'}, 2={fields[1]?.name || 'campo2'}, etc.) y números con * para espacios en blanco (2*=2 columnas vacías)
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-md">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Campos Disponibles:</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {fields.map((field, index) => (
+                      <div key={index} className="flex items-center">
+                        <span className="font-mono bg-blue-100 text-blue-800 px-1 rounded text-xs mr-2">
+                          {index + 1}
+                        </span>
+                        <span className="text-gray-700">{field.name || 'Sin nombre'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-yellow-50 p-3 rounded-md">
+                  <h4 className="text-sm font-medium text-yellow-800 mb-1">Ejemplo:</h4>
+                  <p className="text-xs text-yellow-700">
+                    <code className="bg-yellow-100 px-1 rounded">2*,1,1*,2,4*,3</code> = 2 columnas vacías, campo 1, 1 columna vacía, campo 2, 4 columnas vacías, campo 3
+                  </p>
+                </div>
+                
+                {csvSpacing && (
+                  <div className="bg-blue-50 p-3 rounded-md">
+                    <h4 className="text-sm font-medium text-blue-800 mb-1">Vista Previa:</h4>
+                    <div className="text-xs font-mono text-blue-700">
+                      {(() => {
+                        const pattern = parseCsvSpacing(csvSpacing);
+                        if (!pattern) return 'Patrón inválido';
+                        
+                        const preview = ['file'];
+                        pattern.forEach(item => {
+                          if (item.type === 'blank') {
+                            preview.push('[vacío]');
+                          } else if (item.type === 'field' && fields[item.index]) {
+                            preview.push(fields[item.index].name || 'sin_nombre');
+                          } else {
+                            preview.push('[campo_no_encontrado]');
+                          }
+                        });
+                        
+                        return preview.join(' | ');
+                      })()
+                      }
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCsvSpacing('');
+                    setShowCsvSpacingModal(false);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Limpiar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCsvSpacingModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Aplicar
                 </button>
               </div>
             </div>
